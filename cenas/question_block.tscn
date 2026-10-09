@@ -1,0 +1,27 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://cenas/question_block.gd" id="1_block"]
+[ext_resource type="Texture2D" path="res://Cenario/mariotile.png" id="2_tiles"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_question"]
+atlas = ExtResource("2_tiles")
+region = Rect2(864, 480, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_used"]
+atlas = ExtResource("2_tiles")
+region = Rect2(800, 576, 32, 32)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_block"]
+size = Vector2(32, 32)
+
+[node name="QuestionBlock" type="StaticBody2D"]
+collision_layer = 32
+collision_mask = 0
+script = ExtResource("1_block")
+used_texture = SubResource("AtlasTexture_used")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("AtlasTexture_question")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_block")

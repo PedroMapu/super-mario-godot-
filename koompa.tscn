@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://cdbmdmsh3u3y0"]
+
+[ext_resource type="Script" path="res://cenas/koopa.gd" id="4_enemy"]
+
+[ext_resource type="Texture2D" uid="uid://iluwoo5eicyi" path="res://Inimigos/Koopa_Shell.png" id="1_ncexi"]
+[ext_resource type="Texture2D" uid="uid://wv4eq6sspap7" path="res://Inimigos/Koopa_Walk2.png" id="2_l1y8s"]
+[ext_resource type="Texture2D" uid="uid://deqxjro85hc5l" path="res://Inimigos/Koopa_Walk1.png" id="3_jn016"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_03y75"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_ncexi")
+}],
+"loop": 1,
+"name": &"koopa_shell",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_l1y8s")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_jn016")
+}],
+"loop": 1,
+"name": &"koopa_walk",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_enemy"]
+size = Vector2(14, 23)
+
+[node name="koopa" type="CharacterBody2D" unique_id=47936430 groups=["enemies"]]
+collision_layer = 4
+collision_mask = 30
+floor_snap_length = 2.0
+script = ExtResource("4_enemy")
+
+[node name="animacao_koopa" type="AnimatedSprite2D" parent="." unique_id=1900727594]
+sprite_frames = SubResource("SpriteFrames_03y75")
+animation = &"koopa_walk"
+
+autoplay = "koopa_walk"
+
+[node name="Colisao" type="CollisionShape2D" parent="."]
+position = Vector2(0, 0.5)
+shape = SubResource("RectangleShape2D_enemy")

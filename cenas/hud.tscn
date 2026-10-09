@@ -1,0 +1,134 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://cenas/hud.gd" id="1_hud"]
+[ext_resource type="Texture2D" path="res://Mario/mario.png" id="2_mario"]
+[ext_resource type="Texture2D" path="res://Cenario/hud/heart_full.svg" id="3_heart"]
+[ext_resource type="Texture2D" path="res://Cenario/mariotile.png" id="4_tiles"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_face"]
+atlas = ExtResource("2_mario")
+region = Rect2(209, 0, 14, 12)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_box"]
+atlas = ExtResource("4_tiles")
+region = Rect2(864, 480, 32, 32)
+
+[sub_resource type="StyleBoxFlat" id="StyleBox_panel"]
+bg_color = Color(0.055, 0.045, 0.075, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.52, 0.35, 0.32, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_left = 8
+corner_radius_bottom_right = 8
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 4
+
+[node name="HUD" type="CanvasLayer"]
+layer = 10
+process_mode = 3
+script = ExtResource("1_hud")
+
+[node name="Margin" type="MarginContainer" parent="."]
+offset_left = 16.0
+offset_top = 16.0
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBox_panel")
+
+[node name="Padding" type="MarginContainer" parent="Margin/Panel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="Rows" type="VBoxContainer" parent="Margin/Panel/Padding"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Lives" type="HBoxContainer" parent="Margin/Panel/Padding/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="MarioFace" type="TextureRect" parent="Margin/Panel/Padding/Rows/Lives"]
+custom_minimum_size = Vector2(42, 36)
+layout_mode = 2
+texture_filter = 1
+mouse_filter = 2
+texture = SubResource("AtlasTexture_face")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Hearts" type="HBoxContainer" parent="Margin/Panel/Padding/Rows/Lives"]
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Heart1" type="TextureRect" parent="Margin/Panel/Padding/Rows/Lives/Hearts"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture_filter = 1
+mouse_filter = 2
+texture = ExtResource("3_heart")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Heart2" type="TextureRect" parent="Margin/Panel/Padding/Rows/Lives/Hearts"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture_filter = 1
+mouse_filter = 2
+texture = ExtResource("3_heart")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Heart3" type="TextureRect" parent="Margin/Panel/Padding/Rows/Lives/Hearts"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture_filter = 1
+mouse_filter = 2
+texture = ExtResource("3_heart")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Boxes" type="HBoxContainer" parent="Margin/Panel/Padding/Rows"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BoxIcon" type="TextureRect" parent="Margin/Panel/Padding/Rows/Boxes"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+texture_filter = 1
+mouse_filter = 2
+texture = SubResource("AtlasTexture_box")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Margin/Panel/Padding/Rows/Boxes"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.87, 0.81, 0.76, 1)
+theme_override_font_sizes/font_size = 18
+text = "CAIXAS"
+
+[node name="Count" type="Label" parent="Margin/Panel/Padding/Rows/Boxes"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.91, 0.62, 1)
+theme_override_font_sizes/font_size = 20
+text = "0 / 0"
+horizontal_alignment = 2

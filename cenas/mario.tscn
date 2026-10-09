@@ -1,0 +1,146 @@
+[gd_scene format=3 uid="uid://bnuee8iaq3b8r"]
+
+[ext_resource type="Texture2D" uid="uid://d0ed4ruekqryf" path="res://Mario/mario.png" id="1_4cqt6"]
+[ext_resource type="Script" uid="uid://lmg354jsy0gj" path="res://cenas/mario.gd" id="1_jthgk"]
+[ext_resource type="Script" uid="uid://342jp71t5oo1" path="res://cenas/map_camera.gd" id="3_camera"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4cqt6"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(368, 38, 16, 24)
+margin = Rect2(4, 3, 8, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_swim_1"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(8, 38, 16, 24)
+margin = Rect2(4, 3, 8, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jthgk"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(209, 0, 14, 20)
+margin = Rect2(5, 7, 10, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1qywg"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(208, 39, 16, 22)
+margin = Rect2(4, 5, 8, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g532q"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(198, 155, 33, 31)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lvnty"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(315, 155, 35, 31)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_swim_2"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(49, 39, 15, 21)
+margin = Rect2(4, 6, 9, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ls8p2"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(328, 0, 15, 19)
+margin = Rect2(4, 8, 9, 9)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_vabh6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_4cqt6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_swim_1")
+}],
+"loop": 1,
+"name": &"mario_death",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jthgk")
+}],
+"loop": 1,
+"name": &"small_idle",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1qywg")
+}],
+"loop": 1,
+"name": &"small_jump",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g532q")
+}],
+"loop": 1,
+"name": &"small_swim_down",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g532q")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lvnty")
+}],
+"loop": 1,
+"name": &"small_swim_sides",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_swim_2")
+}],
+"loop": 1,
+"name": &"small_swim_up",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jthgk")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ls8p2")
+}],
+"loop": 1,
+"name": &"small_walk",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_mtgg2"]
+size = Vector2(30, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(36, 42)
+
+[node name="Mario" type="CharacterBody2D" unique_id=264121636]
+collision_mask = 62
+script = ExtResource("1_jthgk")
+metadata/_edit_group_ = true
+
+[node name="Animacao" type="AnimatedSprite2D" parent="." unique_id=1402773378]
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_vabh6")
+animation = &"small_jump"
+
+[node name="Colisao" type="CollisionShape2D" parent="." unique_id=1868287829]
+position = Vector2(0, 6)
+shape = SubResource("RectangleShape2D_mtgg2")
+
+[node name="AreaDano" type="Area2D" parent="." unique_id=1868949472]
+collision_layer = 0
+collision_mask = 140
+
+[node name="ColisaoDano" type="CollisionShape2D" parent="AreaDano" unique_id=756893127]
+position = Vector2(2, 4)
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1050970059]
+limit_left = -384
+limit_top = -448
+limit_right = 5376
+limit_bottom = 352
+script = ExtResource("3_camera")
