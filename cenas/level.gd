@@ -7,6 +7,9 @@ const QUESTION_BLOCK_SCENE := preload("res://cenas/question_block.tscn")
 const QUESTION_TILES := [Vector2i(27, 15), Vector2i(1, 30)]
 const HUD_SCENE := preload("res://cenas/hud.tscn")
 const FALL_DEATH_MARGIN := 64.0
+const FALLING_PLATFORM_SCENE := preload("res://cenas/falling_platform.tscn")
+const PLATFORM_ATLAS_ORIGIN := Vector2i(9, 21)
+const PLATFORM_ATLAS_SIZE := Vector2i(3, 2)
 
 var total_boxes := 0
 var activated_boxes := 0
@@ -23,6 +26,7 @@ func _ready() -> void:
 	mario.fall_death_y = bounds.end.y + FALL_DEATH_MARGIN
 	mario.death_finished.connect(_restart_level)
 	_setup_question_blocks()
+	_setup_falling_platforms()
 	_register_question_blocks()
 	_setup_hud()
 
@@ -51,6 +55,9 @@ func _on_box_activated() -> void:
 
 func _restart_level() -> void:
 	if scene_file_path.is_empty():
+		for platform in get_tree().get_nodes_in_group("falling_platforms"):
+			if is_ancestor_of(platform):
+				platform.reset_platform()
 		mario._respawn()
 		return
 	var tree := get_tree()
@@ -97,6 +104,31 @@ func _create_question_block(
 	texture.region = source.get_tile_texture_region(atlas_coords)
 	block.get_node("Sprite2D").texture = texture
 	return block
+
+
+func _setup_falling_platforms() -> void:
+	var ground := $Mundo/Ground as TileMapLayer
+	for child in $Mundo.get_children():
+		var layer := child as TileMapLayer
+		if layer == null or layer.tile_set == null:
+			continue
+		for cell in layer.get_used_cells():
+			if layer.get_cell_atlas_coords(cell) != PLATFORM_ATLAS_ORIGIN:
+				continue
+			var source_id := layer.get_cell_source_id(cell)
+			var cells: Array[Vector2i] = []
+			for row in PLATFORM_ATLAS_SIZE.y:
+				for column in PLATFORM_ATLAS_SIZE.x:
+					var offset := Vector2i(column, row)
+					var neighbor := cell + offset
+					if layer.get_cell_source_id(neighbor) == source_id and layer.get_cell_atlas_coords(neighbor) == PLATFORM_ATLAS_ORIGIN + offset:
+						cells.append(neighbor)
+			var platform := FALLING_PLATFORM_SCENE.instantiate() as StaticBody2D
+			platform.name = "FallingPlatform_%d_%d" % [cell.x, cell.y]
+			platform.configure_from_tiles(layer, cells, ground.tile_set)
+			for platform_cell in cells:
+				layer.erase_cell(platform_cell)
+			layer.add_child(platform)
 
 
 func get_map_bounds() -> Rect2:

@@ -107,6 +107,7 @@ func _physics_process(delta: float) -> void:
 	_check_block_contacts()
 	_check_enemy_contacts()
 	if not is_dead:
+		_check_platform_contacts()
 		_update_animation(input_direction)
 
 
@@ -154,6 +155,18 @@ func _check_block_contacts() -> void:
 			block.activate_from_below()
 
 
+func _check_platform_contacts() -> void:
+	if _fall_velocity < 0.0:
+		return
+	for index in get_slide_collision_count():
+		var collision := get_slide_collision(index)
+		if collision.get_normal().y >= -CONTACT_NORMAL_THRESHOLD:
+			continue
+		var platform := collision.get_collider() as Node
+		if platform != null and platform.has_method("start_collapse"):
+			platform.start_collapse()
+
+
 func _feet_position() -> Vector2:
 	var rectangle := body_shape.shape as RectangleShape2D
 	return body_shape.to_global(Vector2(0, rectangle.size.y * 0.5))
@@ -190,7 +203,9 @@ func _select_animation(input_direction: float) -> StringName:
 			return &"small_swim_down"
 		return &"small_swim_sides"
 	if not is_on_floor():
-		return &"small_jump" if velocity.y < 0.0 else &"small_fall"
+		if velocity.y < 0.0 or not sprite.sprite_frames.has_animation(&"small_fall"):
+			return &"small_jump"
+		return &"small_fall"
 	if absf(velocity.x) > ANIMATION_MOVEMENT_THRESHOLD:
 		return &"small_walk"
 	return &"small_idle"

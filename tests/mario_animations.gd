@@ -63,7 +63,8 @@ func _run() -> void:
 		await frames(1)
 		if mario.velocity.y > 0.0:
 			break
-	check(mario.velocity.y > 0.0 and sprite.animation == &"small_fall", "Descida real usa fall")
+	var fall_animation := &"small_fall" if sprite.sprite_frames.has_animation(&"small_fall") else &"small_jump"
+	check(mario.velocity.y > 0.0 and sprite.animation == fall_animation, "Descida real usa fall ou pose de salto quando fall nao existe")
 	await frames(30)
 	check(mario.is_on_floor() and sprite.animation == &"small_idle" and sprite.flip_h, "Pouso restaura idle com direcao preservada")
 

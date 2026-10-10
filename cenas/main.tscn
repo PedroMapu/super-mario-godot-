@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://csyg267udipak" path="res://cenas/level_01.tscn" id="1_mtgg2"]
 [ext_resource type="Script" uid="uid://daq55kwxr4vu3" path="res://cenas/main.gd" id="3_main"]
-[ext_resource type="AudioStream" path="res://Mario/Eyes_Without_A_Face_Slowed_Reverb.mp3" id="4_music"]
+[ext_resource type="AudioStream" path="res://Mario/lavender_town.mp3" id="4_music"]
 
 [node name="Main" type="Node2D" unique_id=430353392]
 script = ExtResource("3_main")

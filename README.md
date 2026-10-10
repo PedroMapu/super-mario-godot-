@@ -91,7 +91,7 @@ Validacao das fases e camera: `godot --headless --path . --script res://tests/le
 
 O corpo e a area de dano do Mario usam caixas fixas de 28x40 pixels, centradas em `(0, 6)`, correspondendo ao corpo parado em escala 2. Os pes ficam em `y=26`. Pisoes e entrada na agua usam a posicao real dos pes; a consulta da agua ocorre 2 pixels dentro do colisor.
 
-Os frames, recortes, margens, ordem, FPS e loops montados no editor sao preservados. O script seleciona `small_idle` para parado, `small_walk` para caminhada, `small_jump` para subida e `small_fall` para descida em terra. Dentro da agua, A/D seleciona `small_swim_sides`; S seleciona `small_swim_down` e acelera o mergulho. Sem movimento lateral, o afundamento natural tambem usa `small_swim_down`. O Mario conserva a ultima direcao ao parar.
+Os frames, recortes, margens, ordem, FPS e loops montados no editor sao preservados. O script seleciona `small_idle` para parado, `small_walk` para caminhada, `small_jump` para subida e `small_fall` para descida em terra; se `small_fall` nao existir, usa a pose `small_jump` tambem na descida. Dentro da agua, A/D seleciona `small_swim_sides`; S seleciona `small_swim_down` e acelera o mergulho. Sem movimento lateral, o afundamento natural tambem usa `small_swim_down`. O Mario conserva a ultima direcao ao parar.
 
 Validacao das caixas: `godot --headless --path . --script res://tests/mario_collisions.gd`.
 Validacao das animacoes: `godot --headless --path . --script res://tests/mario_animations.gd`.
@@ -111,6 +111,14 @@ Arraste `cenas/coin.tscn` para qualquer fase e duplique as instancias onde quise
 Ao encostar no Mario, a moeda desativa a coleta, sobe 10 pixels e desaparece gradualmente em 0,24 segundos, sendo removida ao final. `Collect Rise` e `Collect Duration` permitem ajustar o efeito no Inspetor. Cada moeda emite `collected(player)` uma unica vez, permitindo conectar um contador futuramente.
 
 Validacao da coleta: `godot --headless --path . --script res://tests/coins.gd`.
+
+## Plataformas que caem
+
+As plataformas de pedra de 3x2 tiles (atlas `(9, 21)` ate `(11, 22)`) nas duas fases viram corpos independentes ao iniciar o jogo. O primeiro pouso do Mario por cima inicia um tremor crescente e uma contagem de 1,5 segundo. Sair da plataforma ou pousar de novo nao reinicia esse prazo. Ao terminar, ela perde a colisao, desce 24 pixels em 0,22 segundo e se quebra em fragmentos que giram, encolhem e desaparecem em 0,35 segundo. Cada plataforma tem sua propria contagem; inimigos, contatos laterais e cabecadas nao ativam a queda.
+
+Depois de terminar a animacao de destruicao, cada plataforma espera 4 segundos e reaparece na posicao original, com colisao e contagem zerada, pronta para outro pouso. `Respawn Delay` controla esse intervalo. A morte do Mario tambem reinicia a fase e restaura todas as plataformas. As contagens pausam durante a morte. Os tiles originais continuam no arquivo da fase para edicao. `cenas/falling_platform.gd` permite ajustar o prazo, a distancia da queda e a duracao dos efeitos.
+
+Validacao do pouso, prazo, destruicao, retorno apos 4 segundos e reinicio nas duas fases: `godot --headless --fixed-fps 60 --path . --script res://tests/falling_platforms.gd`.
 
 ## Bloco de interrogacao
 
