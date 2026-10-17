@@ -2,7 +2,38 @@
 
 [ext_resource type="Texture2D" uid="uid://d0ed4ruekqryf" path="res://Mario/mario.png" id="1_4cqt6"]
 [ext_resource type="Script" uid="uid://lmg354jsy0gj" path="res://cenas/mario.gd" id="1_jthgk"]
+[ext_resource type="Texture2D" uid="uid://c0r2buxby8yxs" path="res://Mario/Big.png" id="2_g532q"]
 [ext_resource type="Script" uid="uid://342jp71t5oo1" path="res://cenas/map_camera.gd" id="3_camera"]
+[ext_resource type="Texture2D" uid="uid://7v24l8xsgldq" path="res://Mario/Small.png" id="3_ls8p2"]
+[ext_resource type="AudioStream" uid="uid://dq4n1ius3qowl" path="res://Mario/small_to_big.wav" id="6_growth_sound"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_x8hvn"]
+atlas = ExtResource("2_g532q")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v6jlc"]
+atlas = ExtResource("2_g532q")
+region = Rect2(160, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_run_passing"]
+atlas = ExtResource("2_g532q")
+region = Rect2(192, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_run_contact"]
+atlas = ExtResource("2_g532q")
+region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_swim_reach"]
+atlas = ExtResource("2_g532q")
+region = Rect2(480, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_swim_pull"]
+atlas = ExtResource("2_g532q")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_swim_recover"]
+atlas = ExtResource("2_g532q")
+region = Rect2(32, 32, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4cqt6"]
 atlas = ExtResource("1_4cqt6")
@@ -25,33 +56,100 @@ region = Rect2(208, 39, 16, 22)
 margin = Rect2(4, 5, 8, 6)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g532q"]
-atlas = ExtResource("1_4cqt6")
-region = Rect2(198, 155, 33, 31)
+atlas = ExtResource("3_ls8p2")
+region = Rect2(480, 0, 30, 36)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lvnty"]
-atlas = ExtResource("1_4cqt6")
-region = Rect2(315, 155, 35, 31)
+atlas = ExtResource("3_ls8p2")
+region = Rect2(0, 36, 30, 36)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_v0yru"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(30, 36, 30, 36)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_swim_2"]
 atlas = ExtResource("1_4cqt6")
 region = Rect2(49, 39, 15, 21)
 margin = Rect2(4, 6, 9, 7)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_ehs0x"]
+atlas = ExtResource("2_g532q")
+region = Rect2(352, 64, 32, 32)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_ls8p2"]
 atlas = ExtResource("1_4cqt6")
 region = Rect2(328, 0, 15, 19)
 margin = Rect2(4, 8, 9, 9)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_v0yru"]
-atlas = ExtResource("1_4cqt6")
-region = Rect2(203, 33, 29, 33)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_x8hvn"]
-atlas = ExtResource("1_4cqt6")
-region = Rect2(240, 33, 30, 33)
-
 [sub_resource type="SpriteFrames" id="SpriteFrames_vabh6"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_x8hvn")
+}],
+"loop": 1,
+"name": &"big_idle",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_reach")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_pull")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_recover")
+}],
+"loop": 1,
+"name": &"big_swim_down",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_reach")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_pull")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_recover")
+}],
+"loop": 1,
+"name": &"big_swim_sides",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_reach")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_pull")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_swim_recover")
+}],
+"loop": 1,
+"name": &"big_swim_up",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v6jlc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_run_passing")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_run_contact")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_run_passing")
+}],
+"loop": 1,
+"name": &"big_walk",
+"speed": 12.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_4cqt6")
@@ -61,7 +159,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"mario_death",
-"speed": 5.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -69,7 +167,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"small_idle",
-"speed": 5.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -77,15 +175,7 @@ animations = [{
 }],
 "loop": 1,
 "name": &"small_jump",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_g532q")
-}],
-"loop": 1,
-"name": &"small_swim_down",
-"speed": 5.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -93,10 +183,13 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_lvnty")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_v0yru")
 }],
 "loop": 1,
 "name": &"small_swim_sides",
-"speed": 5.0
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -104,7 +197,15 @@ animations = [{
 }],
 "loop": 1,
 "name": &"small_swim_up",
-"speed": 6.0
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ehs0x")
+}],
+"loop": 1,
+"name": &"small_to_big",
+"speed": 10.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -112,16 +213,10 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_ls8p2")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_v0yru")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_x8hvn")
 }],
 "loop": 1,
 "name": &"small_walk",
-"speed": 5.0
+"speed": 10.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mtgg2"]
@@ -138,11 +233,19 @@ metadata/_edit_group_ = true
 [node name="Animacao" type="AnimatedSprite2D" parent="." unique_id=1402773378]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_vabh6")
-animation = &"small_walk"
+animation = &"big_walk"
 
 [node name="Colisao" type="CollisionShape2D" parent="." unique_id=1868287829]
 position = Vector2(0, 6)
 shape = SubResource("RectangleShape2D_mtgg2")
+
+[node name="GrowthSound" type="AudioStreamPlayer" parent="." unique_id=1680317387]
+process_mode = 3
+stream = ExtResource("6_growth_sound")
+volume_db = -6.0
+
+[node name="JumpSound" type="AudioStreamPlayer" parent="." unique_id=1546929717]
+volume_db = -8.0
 
 [node name="AreaDano" type="Area2D" parent="." unique_id=1868949472]
 collision_layer = 0

@@ -37,6 +37,13 @@ func collisions_disabled(platform: Node) -> bool:
 	return true
 
 
+func collides_with(mario: CharacterBody2D, platform: Node) -> bool:
+	for index in mario.get_slide_collision_count():
+		if mario.get_slide_collision(index).get_collider() == platform:
+			return true
+	return false
+
+
 func _run() -> void:
 	root.size = Vector2i(1152, 648)
 	for scene_path in ["res://cenas/level_01.tscn", "res://cenas/level_02.tscn"]:
@@ -63,14 +70,14 @@ func _run() -> void:
 		mario._fall_velocity = 0.0
 		mario.move_and_slide()
 		mario._check_platform_contacts()
-		check(mario.get_slide_collision_count() > 0 and platform.state == platform.State.IDLE, "Contato lateral nao inicia contagem")
+		check(not collides_with(mario, platform) and platform.state == platform.State.IDLE, "Lateral permite passagem e nao inicia contagem")
 		var underside := 32.0 if scene_path.contains("01") else 48.0
 		mario.global_position = platform.global_position + Vector2(32, underside + 18.0)
 		mario.velocity = Vector2(0, -570)
 		mario._fall_velocity = -570.0
 		mario.move_and_slide()
 		mario._check_platform_contacts()
-		check(mario.get_slide_collision_count() > 0 and platform.state == platform.State.IDLE, "Cabecada nao inicia contagem")
+		check(not collides_with(mario, platform) and platform.state == platform.State.IDLE, "Parte inferior permite passagem e nao inicia contagem")
 
 		mario.global_position = platform.global_position + Vector2(32, -50)
 		mario.velocity = Vector2.ZERO

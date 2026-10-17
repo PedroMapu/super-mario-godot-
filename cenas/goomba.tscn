@@ -33,7 +33,7 @@ size = Vector2(14, 16)
 
 [node name="goomba" type="CharacterBody2D" unique_id=1755566213 groups=["enemies"]]
 collision_layer = 4
-collision_mask = 30
+collision_mask = 542
 floor_snap_length = 2.0
 script = ExtResource("4_enemy")
 

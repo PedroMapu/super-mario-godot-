@@ -18,6 +18,12 @@ const RESPAWN_INVULNERABILITY := 0.6
 
 const MOVEMENT_ACCELERATION := 1100.0
 const ANIMATION_MOVEMENT_THRESHOLD := 5.0
+const GROWTH_ANIMATION := &"small_to_big"
+const GROWTH_FPS := 10.0
+const GROWTH_IDLE_DURATION := 0.15
+const BIG_BODY_HEIGHT := 64.0
+const SMALL_JUMP_SOUND := preload("res://Mario/jump_small.wav")
+const BIG_JUMP_SOUND := preload("res://Mario/jump_big.wav")
 
 const CONTACT_NORMAL_THRESHOLD := 0.5
 const STOMP_TOLERANCE := 4.0
@@ -33,13 +39,18 @@ const DEATH_SOUND := preload("res://Mario/morte_mario.wav")
 const DEATH_SCREAM := preload("res://Mario/grito_mario.wav")
 
 @export var move_speed := 270.0
+
+@export_group("Salto")
 @export var jump_velocity := -270.0
+## Altura do salto do Mario grande em pixels. Aumente para pular mais alto.
+@export_range(1.0, 1000.0, 5.0, "or_greater", "suffix:px") var big_jump_height := 220.0
+@export_group("")
+
 @export var swim_speed := 110.0
 @export var swim_impulse := -145.0
 @export var enemy_bounce_velocity := -220.0
 
 @export_group("Morte")
-@export var death_texture: Texture2D = preload("res://cenas/mario_death_pose.tres")
 @export_range(0.0, 1.0, 0.05, "suffix:s") var death_pause := 0.3
 @export var death_jump_velocity := -360.0
 @export_range(1.0, 3000.0, 10.0, "or_greater") var death_gravity := 980.0
@@ -51,6 +62,23 @@ const DEATH_SCREAM := preload("res://Mario/grito_mario.wav")
 @onready var sprite: AnimatedSprite2D = $Animacao
 @onready var damage_area: Area2D = $AreaDano
 @onready var body_shape: CollisionShape2D = $Colisao
+@onready var damage_shape: CollisionShape2D = $AreaDano/ColisaoDano
+@onready var growth_sound: AudioStreamPlayer = $GrowthSound
+@onready var jump_sound: AudioStreamPlayer = $JumpSound
+
+var is_big := false
+var is_growing := false
+var _growth_idle_time := 0.0
+var _growth_velocity := Vector2.ZERO
+var _growth_tree_paused := false
+var _growth_process_mode: ProcessMode
+var _small_sprite_offset := Vector2.ZERO
+var _base_sprite_frames: SpriteFrames
+var _small_body_position := Vector2.ZERO
+var _small_body_size := Vector2.ZERO
+var _small_damage_position := Vector2.ZERO
+var _small_damage_size := Vector2.ZERO
+var _big_body_applied := false
 
 var is_swimming := false
 var _spawn_position := Vector2.ZERO
@@ -65,12 +93,12 @@ var _death_time := 0.0
 var _death_falling := false
 var _death_offscreen := false
 var _death_finishing := false
-var _death_sprite: Sprite2D
 var _saved_collision_layer := 0
 var _saved_collision_mask := 0
 var _saved_process_mode: ProcessMode
 var _saved_tree_paused := false
 var _saved_sprite_visible := true
+var _saved_sprite_z_index := 0
 var _saved_camera_top_level := false
 var _saved_camera_transform := Transform2D.IDENTITY
 
@@ -80,22 +108,45 @@ func _ready() -> void:
 	_spawn_position = global_position
 	damage_area.body_entered.connect(_on_damage_contact)
 	damage_area.area_entered.connect(_on_damage_contact)
+	# Cada Mario conserva suas formas e os recursos do editor permanecem intactos.
+	body_shape.shape = body_shape.shape.duplicate()
+	damage_shape.shape = damage_shape.shape.duplicate()
+	_small_sprite_offset = sprite.offset
+	_base_sprite_frames = sprite.sprite_frames
+	_small_body_position = body_shape.position
+	_small_body_size = (body_shape.shape as RectangleShape2D).size
+	_small_damage_position = damage_shape.position
+	_small_damage_size = (damage_shape.shape as RectangleShape2D).size
+	sprite.animation_finished.connect(_on_growth_animation_finished)
+	sprite.frame_changed.connect(_align_sprite_to_feet)
+	sprite.animation_changed.connect(_align_sprite_to_feet)
+	sprite.play(&"small_idle")
 
 
 func _exit_tree() -> void:
 	# Evita deixar o jogo pausado se a cena for removida durante a morte.
 	if is_dead:
 		get_tree().paused = _saved_tree_paused
+	elif is_growing:
+		get_tree().paused = _growth_tree_paused
 
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		_process_death(delta)
 		return
+	if is_growing:
+		if _growth_idle_time > 0.0:
+			_growth_idle_time = maxf(0.0, _growth_idle_time - delta)
+			if _growth_idle_time == 0.0:
+				_finish_growth()
+		return
 	if global_position.y > fall_death_y:
 		die()
 		return
 	_update_damage_feedback(delta)
+	if is_big and not _big_body_applied:
+		_try_expand_body()
 	is_swimming = _is_in_water()
 	var input_direction := Input.get_axis("move_left", "move_right")
 	_update_horizontal_velocity(input_direction, delta)
@@ -105,6 +156,8 @@ func _physics_process(delta: float) -> void:
 	_fall_velocity = velocity.y
 	move_and_slide()
 	_check_block_contacts()
+	if is_growing:
+		return
 	_check_enemy_contacts()
 	if not is_dead:
 		_check_platform_contacts()
@@ -140,7 +193,12 @@ func _update_vertical_velocity(delta: float) -> void:
 		if not is_on_floor():
 			velocity.y += get_gravity().y * delta
 		if Input.is_action_just_pressed("jump") and is_on_floor():
-			velocity.y = jump_velocity
+			if is_big:
+				velocity.y = -sqrt(2.0 * absf(get_gravity().y) * big_jump_height)
+			else:
+				velocity.y = jump_velocity
+			jump_sound.stream = BIG_JUMP_SOUND if is_big else SMALL_JUMP_SOUND
+			jump_sound.play()
 
 
 func _check_block_contacts() -> void:
@@ -185,7 +243,7 @@ func _is_in_water() -> bool:
 
 
 func _update_animation(input_direction: float) -> void:
-	if is_dead:
+	if is_dead or is_growing:
 		return
 	if input_direction != 0.0:
 		sprite.flip_h = input_direction < 0.0
@@ -198,6 +256,25 @@ func _update_animation(input_direction: float) -> void:
 
 
 func _select_animation(input_direction: float) -> StringName:
+	if is_big and is_swimming:
+		if Input.is_action_pressed("move_down"):
+			return &"big_swim_down"
+		if input_direction != 0.0:
+			return &"big_swim_sides"
+		if velocity.y < 0.0:
+			return &"big_swim_up"
+		return &"big_swim_down"
+	var small_animation := _select_small_animation(input_direction)
+	if not is_big:
+		return small_animation
+	var big_animation := StringName(String(small_animation).replace("small_", "big_"))
+	if sprite.sprite_frames.has_animation(big_animation):
+		return big_animation
+	# Enquanto nao houver outras poses grandes, conserva o Mario grande.
+	return &"big_idle"
+
+
+func _select_small_animation(input_direction: float) -> StringName:
 	if is_swimming:
 		if Input.is_action_pressed("move_down") or (input_direction == 0.0 and velocity.y > 0.0):
 			return &"small_swim_down"
@@ -211,8 +288,91 @@ func _select_animation(input_direction: float) -> StringName:
 	return &"small_idle"
 
 
+func grow() -> void:
+	if is_dead or is_growing or is_big or _respawn_pending:
+		return
+	if not sprite.sprite_frames.has_animation(GROWTH_ANIMATION):
+		return
+	jump_sound.stop()
+	var current_pose := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	var frames := sprite.sprite_frames.duplicate() as SpriteFrames
+	# A pose small_to_big montada no editor vira a etapa intermediaria classica.
+	# Animacoes com varios frames ja montados sao reproduzidas como estao.
+	if frames.get_frame_count(GROWTH_ANIMATION) == 1:
+		var growth_pose := frames.get_frame_texture(GROWTH_ANIMATION, 0)
+		var big_pose := frames.get_frame_texture(&"big_idle", 0)
+		frames.clear(GROWTH_ANIMATION)
+		for pose in [current_pose, growth_pose, current_pose, growth_pose, big_pose, current_pose, growth_pose, big_pose]:
+			frames.add_frame(GROWTH_ANIMATION, pose)
+		frames.set_animation_speed(GROWTH_ANIMATION, GROWTH_FPS)
+	frames.set_animation_loop(GROWTH_ANIMATION, false)
+	is_growing = true
+	_growth_idle_time = 0.0
+	_growth_velocity = velocity
+	velocity = Vector2.ZERO
+	_growth_tree_paused = get_tree().paused
+	_growth_process_mode = process_mode
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().paused = true
+	sprite.modulate.a = 1.0
+	sprite.sprite_frames = frames
+	sprite.play(GROWTH_ANIMATION)
+	growth_sound.play()
+	_align_sprite_to_feet()
+
+
+func _on_growth_animation_finished() -> void:
+	if not is_growing or sprite.animation != GROWTH_ANIMATION:
+		return
+	is_big = true
+	sprite.play(&"big_idle")
+	_growth_idle_time = GROWTH_IDLE_DURATION
+
+
+func _finish_growth() -> void:
+	growth_sound.stop()
+	get_tree().paused = _growth_tree_paused
+	process_mode = _growth_process_mode
+	is_growing = false
+	velocity = _growth_velocity
+	_damage_grace = maxf(_damage_grace, RESPAWN_INVULNERABILITY)
+	_try_expand_body()
+
+
+func _align_sprite_to_feet() -> void:
+	if not is_growing and not is_big and not is_dead:
+		return
+	var texture := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	var feet_y := _small_body_position.y + _small_body_size.y * 0.5
+	sprite.offset.y = (feet_y - sprite.position.y) / sprite.scale.y - texture.get_height() * 0.5
+
+
+func _try_expand_body() -> void:
+	var rectangle := RectangleShape2D.new()
+	rectangle.size = Vector2(_small_body_size.x, BIG_BODY_HEIGHT)
+	var feet_y := _small_body_position.y + _small_body_size.y * 0.5
+	var center := Vector2(_small_body_position.x, feet_y - BIG_BODY_HEIGHT * 0.5)
+	var query := PhysicsShapeQueryParameters2D.new()
+	var probe := rectangle.duplicate() as RectangleShape2D
+	# O repouso de move_and_slide pode penetrar alguns centesimos no piso.
+	probe.size -= Vector2(0.2, 0.2)
+	query.shape = probe
+	query.transform = global_transform * Transform2D(0.0, center)
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	# Ao bater sob a caixa, espera sair do teto para aumentar o corpo sem prender.
+	if not get_world_2d().direct_space_state.intersect_shape(query, 1).is_empty():
+		return
+	(body_shape.shape as RectangleShape2D).size = rectangle.size
+	body_shape.position = center
+	var extra_height := BIG_BODY_HEIGHT - _small_body_size.y
+	(damage_shape.shape as RectangleShape2D).size = _small_damage_size + Vector2(0, extra_height)
+	damage_shape.position = _small_damage_position - Vector2(0, extra_height * 0.5)
+	_big_body_applied = true
+
+
 func _on_damage_contact(source: Node2D) -> void:
-	if _respawn_pending or _damage_grace > 0.0:
+	if is_growing or _respawn_pending or _damage_grace > 0.0:
 		return
 	# Contatos dos inimigos sao resolvidos apos o movimento, incluindo pisoes.
 	if source.has_method("on_player_contact"):
@@ -269,7 +429,7 @@ func bounce_from_enemy() -> void:
 
 
 func take_enemy_damage(source: Node2D) -> void:
-	if is_dead or _respawn_pending or _damage_grace > 0.0:
+	if is_dead or is_growing or _respawn_pending or _damage_grace > 0.0:
 		return
 	var damage := 1
 	if source.has_method("get_contact_damage"):
@@ -294,6 +454,12 @@ func set_lives(value: int) -> void:
 func die() -> void:
 	if is_dead:
 		return
+	growth_sound.stop()
+	jump_sound.stop()
+	if is_growing:
+		get_tree().paused = _growth_tree_paused
+		process_mode = _growth_process_mode
+		is_growing = false
 	if lives != 0:
 		set_lives(0)
 	is_dead = true
@@ -310,7 +476,7 @@ func die() -> void:
 	_save_death_state()
 	_disable_death_contacts()
 	_freeze_camera()
-	_show_death_pose()
+	_play_death_animation()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = true
 	death_started.emit()
@@ -322,6 +488,7 @@ func _save_death_state() -> void:
 	_saved_process_mode = process_mode
 	_saved_tree_paused = get_tree().paused
 	_saved_sprite_visible = sprite.visible
+	_saved_sprite_z_index = sprite.z_index
 
 
 func _disable_death_contacts() -> void:
@@ -344,16 +511,14 @@ func _freeze_camera() -> void:
 		camera.force_update_scroll()
 
 
-func _show_death_pose() -> void:
-	# A pose usa uma textura separada: nenhum SpriteFrames do editor e alterado.
-	sprite.pause()
-	sprite.hide()
-	_death_sprite = Sprite2D.new()
-	_death_sprite.name = "DeathPose"
-	_death_sprite.texture = death_texture
-	_death_sprite.transform = sprite.transform
-	_death_sprite.z_index = 100
-	add_child(_death_sprite)
+func _play_death_animation() -> void:
+	# Reproduz os frames de mario_death montados no editor, inclusive com o mundo pausado.
+	sprite.offset = _small_sprite_offset
+	sprite.z_index = 100
+	sprite.show()
+	sprite.play(&"mario_death")
+	sprite.set_frame_and_progress(0, 0.0)
+	_align_sprite_to_feet()
 
 
 func _play_death_sound() -> void:
@@ -395,7 +560,7 @@ func _process_death(delta: float) -> void:
 	if velocity.y > 0.0 and global_position.y > screen_bottom + DEATH_OFFSCREEN_MARGIN:
 		_death_offscreen = true
 		_death_time = 0.0
-		_death_sprite.hide()
+		sprite.hide()
 
 
 func _screen_bottom() -> float:
@@ -418,8 +583,23 @@ func _finish_death() -> void:
 
 
 func _respawn() -> void:
+	growth_sound.stop()
+	jump_sound.stop()
 	if is_dead:
 		_restore_after_death()
+	if is_growing:
+		get_tree().paused = _growth_tree_paused
+		process_mode = _growth_process_mode
+	is_growing = false
+	is_big = false
+	_big_body_applied = false
+	_growth_idle_time = 0.0
+	sprite.offset = _small_sprite_offset
+	sprite.sprite_frames = _base_sprite_frames
+	(body_shape.shape as RectangleShape2D).size = _small_body_size
+	body_shape.position = _small_body_position
+	(damage_shape.shape as RectangleShape2D).size = _small_damage_size
+	damage_shape.position = _small_damage_position
 	global_position = _spawn_position
 	velocity = Vector2.ZERO
 	is_swimming = false
@@ -447,9 +627,8 @@ func _restore_after_death() -> void:
 	if camera != null:
 		camera.top_level = _saved_camera_top_level
 		camera.transform = _saved_camera_transform
-	if is_instance_valid(_death_sprite):
-		_death_sprite.queue_free()
 	sprite.visible = _saved_sprite_visible
+	sprite.z_index = _saved_sprite_z_index
 	add_to_group("player")
 	is_dead = false
 

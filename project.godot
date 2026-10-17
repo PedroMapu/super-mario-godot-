@@ -63,6 +63,7 @@ shoot={
 2d_physics/layer_6="bonus"
 2d_physics/layer_7="fireball"
 2d_physics/layer_8="hazard"
+2d_physics/layer_10="enemy_support"
 
 [physics]
 

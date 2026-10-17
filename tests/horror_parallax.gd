@@ -47,25 +47,34 @@ func _run() -> void:
 		check(background.layer < 0, "Fundo fica atras do mundo na fase " + number)
 		palettes.append(background.sky_tint)
 		var sky := background.get_node("Sky") as Parallax2D
+		var clouds := background.get_node("Clouds") as Parallax2D
 		var distant := background.get_node("DistantGraves") as Parallax2D
 		var near := background.get_node("NearGraves") as Parallax2D
 		var fog := background.get_node("Fog") as ColorRect
 		var material := fog.material as ShaderMaterial
 		await save_capture("horror_level_" + number + ".png")
-		var positions := Vector3(sky.position.x, distant.position.x, near.position.x)
+		var sky_position := sky.position
+		var cloud_offset := clouds.scroll_offset.x
+		await frames(3)
+		check(clouds.scroll_offset.x < cloud_offset, "Nuvens se movem para a esquerda com a camera parada na fase " + number)
+		check(sky.position == sky_position, "Lua permanece parada enquanto as nuvens se movem na fase " + number)
+		var positions := Vector3(clouds.position.x, distant.position.x, near.position.x)
 		mario.global_position.x += 400.0
 		camera.force_update_scroll()
 		await frames(3)
-		var movement := (Vector3(sky.position.x, distant.position.x, near.position.x) - positions).abs()
+		var movement := (Vector3(clouds.position.x, distant.position.x, near.position.x) - positions).abs()
 		check(movement.x > 0.0 and movement.x < movement.y and movement.y < movement.z, "Camadas criam profundidade quando a camera anda na fase " + number)
+		check(sky.position == sky_position, "Lua permanece parada quando a camera anda na fase " + number)
 		await save_capture("horror_level_" + number + "_scrolled.png")
 		var elapsed_before: float = material.get_shader_parameter("elapsed")
 		await frames(3)
 		check(float(material.get_shader_parameter("elapsed")) > elapsed_before, "Nevoa se move na fase " + number)
 		paused = true
 		var paused_time: float = material.get_shader_parameter("elapsed")
+		var paused_cloud_offset := clouds.scroll_offset
 		await frames(3)
 		check(is_equal_approx(float(material.get_shader_parameter("elapsed")), paused_time), "Nevoa respeita a pausa da morte na fase " + number)
+		check(clouds.scroll_offset == paused_cloud_offset, "Nuvens respeitam a pausa da morte na fase " + number)
 		paused = false
 		for window_size in [Vector2i(640, 1400), Vector2i(2400, 500), Vector2i(1152, 648)]:
 			root.size = window_size

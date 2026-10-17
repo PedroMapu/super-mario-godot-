@@ -97,11 +97,27 @@ func _run() -> void:
 				expected_cells.append(cell)
 		var original_cell_count := ground.get_used_cells().size()
 		var original_bounds: Rect2 = level.get_map_bounds()
+		var authored_blocks: Array[Node] = []
+		var authored_positions := {}
+		var editor_boxes := level.get_node_or_null("CaixasInterrogacao")
+		if editor_boxes != null:
+			authored_blocks = editor_boxes.get_children()
+			check(authored_blocks.size() == 2, "Fase 2 possui duas caixas selecionaveis antes de iniciar o jogo")
+			# Simula arrastar uma instancia no editor antes de executar a fase.
+			(authored_blocks[0] as Node2D).position += Vector2(64, -32)
+			for authored in authored_blocks:
+				authored_positions[authored.name] = (authored as Node2D).position
 		level.position = Vector2(128, 64)
 		root.add_child(level)
 		level.get_node("Mario").set_physics_process(false)
 		await frames(2)
-		var blocks := ground.get_children()
+		var blocks: Array[Node] = []
+		var converted_platform_tiles := 0
+		for child in ground.get_children():
+			if child.has_method("activate_from_below"):
+				blocks.append(child)
+			elif child.is_in_group("falling_platforms"):
+				converted_platform_tiles += child.get_node("Visuals").get_child_count()
 		check(blocks.size() == expected_cells.size(), "Fase converte todos os blocos pintados: " + scene_path)
 		var correctly_replaced := true
 		for cell in expected_cells:
@@ -110,10 +126,20 @@ func _run() -> void:
 			correctly_replaced = correctly_replaced and replacement.position.is_equal_approx(ground.map_to_local(cell))
 			correctly_replaced = correctly_replaced and replacement.collision_layer == 32 and not replacement.used
 		check(correctly_replaced, "Blocos mantem posicao e camada de colisao, sem tile duplicado: " + scene_path)
-		check(ground.get_used_cells().size() == original_cell_count - expected_cells.size(), "Outros tiles permanecem intactos: " + scene_path)
+		check(ground.get_used_cells().size() == original_cell_count - expected_cells.size() - converted_platform_tiles, "Outros tiles permanecem intactos alem das caixas e plataformas convertidas: " + scene_path)
 		check(level.get_map_bounds() == Rect2(original_bounds.position + level.position, original_bounds.size), "Conversao preserva dimensoes atuais do mapa: " + scene_path)
 		if scene_path.contains("01"):
 			check(expected_cells.size() == 3, "Tres blocos de interrogaçao da fase 1 ficam interativos")
+		else:
+			check(expected_cells.is_empty() and level.total_boxes == authored_blocks.size(), "Fase 2 conta as instancias sem recriar tiles ou duplicar caixas")
+			var editor_positions_preserved := true
+			for authored in authored_blocks:
+				editor_positions_preserved = editor_positions_preserved and (authored as Node2D).position == authored_positions[authored.name]
+				editor_positions_preserved = editor_positions_preserved and (authored as StaticBody2D).collision_layer == 32
+			check(editor_positions_preserved, "Mover uma caixa da fase 2 conserva sua posicao editada e colisao ao iniciar")
+			authored_blocks[0].activate_from_below()
+			authored_blocks[0].activate_from_below()
+			check(level.activated_boxes == 1 and level.hud.boxes_label.text == "1/2", "Caixa movida continua interativa e conta uma vez no HUD")
 		level.queue_free()
 		await frames(2)
 	print("Falhas: ", failures)

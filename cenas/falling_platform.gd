@@ -23,7 +23,7 @@ func _ready() -> void:
 	set_physics_process(false)
 
 
-func configure_from_tiles(layer: TileMapLayer, cells: Array[Vector2i], ground_tiles: TileSet) -> void:
+func configure_from_tiles(layer: TileMapLayer, cells: Array[Vector2i]) -> void:
 	position = layer.map_to_local(cells[0])
 	var tile_visuals := get_node("Visuals") as Node2D
 	for cell in cells:
@@ -38,30 +38,16 @@ func configure_from_tiles(layer: TileMapLayer, cells: Array[Vector2i], ground_ti
 		sprite.texture = texture
 		sprite.position = offset
 		tile_visuals.add_child(sprite)
-		# A fase 2 pinta estas mesmas plataformas na camada de perigos,
-		# sem poligonos proprios. Usa a geometria de chao do mesmo atlas.
-		var collision_source := source
-		var collision_tiles := layer.tile_set
-		if ground_tiles != null and ground_tiles.has_source(source_id):
-			collision_source = ground_tiles.get_source(source_id) as TileSetAtlasSource
-			collision_tiles = ground_tiles
-		var tile_data := collision_source.get_tile_data(atlas_coords, 0)
-		var has_shape := false
-		for physics_layer in collision_tiles.get_physics_layers_count():
-			if (collision_tiles.get_physics_layer_collision_layer(physics_layer) & 2) == 0:
-				continue
-			for polygon_index in tile_data.get_collision_polygons_count(physics_layer):
-				var shape := CollisionPolygon2D.new()
-				shape.position = offset
-				shape.polygon = tile_data.get_collision_polygon_points(physics_layer, polygon_index)
-				add_child(shape)
-				has_shape = true
-		if not has_shape:
+		# Somente a fileira superior sustenta: a parte de baixo e decorativa.
+		# One-way permite atravessar subindo e pousar descendo, nas duas fases.
+		if atlas_coords.y == 21:
 			var shape := CollisionShape2D.new()
 			var rectangle := RectangleShape2D.new()
-			rectangle.size = Vector2(layer.tile_set.tile_size)
-			shape.position = offset
+			rectangle.size = Vector2(layer.tile_set.tile_size.x, 8)
+			shape.position = offset + Vector2(0, -layer.tile_set.tile_size.y * 0.5 + 4)
 			shape.shape = rectangle
+			shape.one_way_collision = true
+			shape.one_way_collision_margin = 1.0
 			add_child(shape)
 
 

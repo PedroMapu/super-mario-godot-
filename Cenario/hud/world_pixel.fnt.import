@@ -1,0 +1,17 @@
+[remap]
+
+importer="font_data_bmfont"
+type="FontFile"
+uid="uid://ckw1bijc6doyk"
+path="res://.godot/imported/world_pixel.fnt-fc9f62472d6d5b3a1f6d28daee8d76da.fontdata"
+
+[deps]
+
+source_file="res://Cenario/hud/world_pixel.fnt"
+dest_files=["res://.godot/imported/world_pixel.fnt-fc9f62472d6d5b3a1f6d28daee8d76da.fontdata"]
+
+[params]
+
+fallbacks=[]
+compress=true
+scaling_mode=2

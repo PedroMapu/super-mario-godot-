@@ -7,6 +7,11 @@ const WALL_NORMAL_THRESHOLD := 0.5
 const FALL_DESPAWN_Y := 2000.0
 const DEFEAT_RISE := 24.0
 const DEFEAT_DURATION := 0.3
+const PATROL_FLOOR_MASK := 2 | 16 | 512
+const EDGE_MARGIN := 2.0
+const FLOOR_HEIGHT_TOLERANCE := 1.0
+const FLOOR_SCAN_STEP := 1.0
+const PATROL_BOUNDARY_TOLERANCE := 0.001
 
 @export var walk_speed := 35.0
 @export_range(-1, 1, 2) var direction: int = -1
@@ -35,7 +40,7 @@ func _physics_process(delta: float) -> void:
 		return
 	contact_grace = maxf(0.0, contact_grace - delta)
 	velocity.y += get_gravity().y * delta
-	velocity.x = _horizontal_velocity(delta)
+	velocity.x = _safe_horizontal_velocity(delta)
 	move_and_slide()
 	_resolve_slide_collisions()
 	if _uses_patrol():
@@ -80,10 +85,48 @@ func _horizontal_velocity(delta: float) -> float:
 	return direction * minf(_movement_speed(), distance / delta)
 
 
+func _safe_horizontal_velocity(delta: float) -> float:
+	var candidate := _horizontal_velocity(delta)
+	if is_zero_approx(candidate) or not is_on_floor():
+		# Primeiro pousa; so depois comeca a patrulhar ou deslizar.
+		return 0.0
+	if _has_safe_ground(candidate * delta):
+		return candidate
+	direction = -direction
+	candidate = _horizontal_velocity(delta)
+	return candidate if _has_safe_ground(candidate * delta) else 0.0
+
+
+func _has_safe_ground(displacement: float) -> bool:
+	var rectangle := body_shape.shape as RectangleShape2D
+	var feet := body_shape.to_global(Vector2(0, rectangle.size.y * 0.5))
+	var half_width := rectangle.size.x * absf(body_shape.global_scale.x) * 0.5
+	var leading_x := feet.x + signf(displacement) * (half_width + EDGE_MARGIN)
+	var steps := maxi(1, ceili(absf(displacement) / FLOOR_SCAN_STEP))
+	var space := get_world_2d().direct_space_state
+	# Confere todo o passo, incluindo o casco rapido, sem saltar buracos estreitos.
+	for step in range(steps + 1):
+		var probe_x := leading_x + displacement * float(step) / steps
+		var query := PhysicsRayQueryParameters2D.create(
+			Vector2(probe_x, feet.y - 2.0), Vector2(probe_x, feet.y + 2.0),
+			PATROL_FLOOR_MASK, [get_rid()]
+		)
+		var hit := space.intersect_ray(query)
+		if hit.is_empty() or absf(hit.position.y - feet.y) > FLOOR_HEIGHT_TOLERANCE:
+			return false
+		if hit.collider is Node and (
+			hit.collider.is_in_group("falling_platforms") or hit.collider.is_in_group("moving_platforms")
+		):
+			return false
+		if hit.normal.y > -WALL_NORMAL_THRESHOLD:
+			return false
+	return true
+
+
 func _update_patrol_direction() -> void:
-	if global_position.x <= _patrol_center_x - patrol_amplitude:
+	if global_position.x <= _patrol_center_x - patrol_amplitude + PATROL_BOUNDARY_TOLERANCE:
 		direction = 1
-	elif global_position.x >= _patrol_center_x + patrol_amplitude:
+	elif global_position.x >= _patrol_center_x + patrol_amplitude - PATROL_BOUNDARY_TOLERANCE:
 		direction = -1
 
 

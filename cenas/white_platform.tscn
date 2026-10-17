@@ -1,0 +1,23 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://cenas/white_platform.gd" id="1_motion"]
+[ext_resource type="Texture2D" path="res://Cenario/mariotile.png" id="2_tiles"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_white"]
+atlas = ExtResource("2_tiles")
+region = Rect2(192, 896, 96, 32)
+
+[sub_resource type="ConvexPolygonShape2D" id="ConvexPolygonShape2D_white"]
+points = PackedVector2Array(-44, -16, 44, -16, 46, -14, 48, -12, 48, 2, 46, 4, 44, 6, -44, 6, -46, 4, -48, 2, -48, -12, -46, -14)
+
+[node name="WhitePlatform" type="AnimatableBody2D" groups=["moving_platforms"]]
+collision_layer = 2
+collision_mask = 0
+sync_to_physics = true
+script = ExtResource("1_motion")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("AtlasTexture_white")
+
+[node name="Colisao" type="CollisionShape2D" parent="."]
+shape = SubResource("ConvexPolygonShape2D_white")

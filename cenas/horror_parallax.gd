@@ -1,7 +1,7 @@
 extends CanvasLayer
 
-const HEIGHT_FACTORS := [1.0, 0.86, 1.15]
-const HORIZONTAL_OFFSETS := [0.0, -0.31, -0.65]
+const HEIGHT_FACTORS := [1.0, 1.0, 0.86, 1.15]
+const HORIZONTAL_OFFSETS := [0.0, 0.0, -0.31, -0.65]
 const MIN_REPEAT_TIMES := 2
 const FOG_CAMERA_SHIFT_FACTOR := 0.30
 
@@ -12,7 +12,7 @@ const FOG_CAMERA_SHIFT_FACTOR := 0.30
 @export var near_tint := Color(0.85, 0.80, 0.95, 0.90)
 @export var fog_tint := Color(0.50, 0.28, 0.38, 0.18)
 
-@onready var _layers: Array[Parallax2D] = [$Sky, $DistantGraves, $NearGraves]
+@onready var _layers: Array[Parallax2D] = [$Sky, $Clouds, $DistantGraves, $NearGraves]
 @onready var _fog: ColorRect = $Fog
 @onready var _fog_material: ShaderMaterial = $Fog.material
 
@@ -31,8 +31,9 @@ func _ready() -> void:
 
 func _apply_palette() -> void:
 	(_layers[0].get_child(0) as Sprite2D).modulate = sky_tint
-	(_layers[1].get_child(0) as Sprite2D).modulate = distant_tint
-	(_layers[2].get_child(0) as Sprite2D).modulate = near_tint
+	(_layers[1].get_child(0) as Sprite2D).modulate = sky_tint
+	(_layers[2].get_child(0) as Sprite2D).modulate = distant_tint
+	(_layers[3].get_child(0) as Sprite2D).modulate = near_tint
 	_fog_material.set_shader_parameter("fog_tint", fog_tint)
 
 

@@ -10,6 +10,10 @@ const FALL_DEATH_MARGIN := 64.0
 const FALLING_PLATFORM_SCENE := preload("res://cenas/falling_platform.tscn")
 const PLATFORM_ATLAS_ORIGIN := Vector2i(9, 21)
 const PLATFORM_ATLAS_SIZE := Vector2i(3, 2)
+const ENEMY_SUPPORT_LAYER := 512
+
+@export var enemy_supports_enabled := false
+@export var growth_block_cells: Array[Vector2i] = []
 
 var total_boxes := 0
 var activated_boxes := 0
@@ -27,6 +31,7 @@ func _ready() -> void:
 	mario.death_finished.connect(_restart_level)
 	_setup_question_blocks()
 	_setup_falling_platforms()
+	_setup_enemy_supports()
 	_register_question_blocks()
 	_setup_hud()
 
@@ -99,6 +104,8 @@ func _create_question_block(
 	var block := QUESTION_BLOCK_SCENE.instantiate() as StaticBody2D
 	block.name = "QuestionBlock_%d_%d" % [cell.x, cell.y]
 	block.position = ground.map_to_local(cell)
+	if cell in growth_block_cells:
+		block.activated.connect(mario.grow)
 	var texture := AtlasTexture.new()
 	texture.atlas = source.texture
 	texture.region = source.get_tile_texture_region(atlas_coords)
@@ -107,7 +114,6 @@ func _create_question_block(
 
 
 func _setup_falling_platforms() -> void:
-	var ground := $Mundo/Ground as TileMapLayer
 	for child in $Mundo.get_children():
 		var layer := child as TileMapLayer
 		if layer == null or layer.tile_set == null:
@@ -125,10 +131,53 @@ func _setup_falling_platforms() -> void:
 						cells.append(neighbor)
 			var platform := FALLING_PLATFORM_SCENE.instantiate() as StaticBody2D
 			platform.name = "FallingPlatform_%d_%d" % [cell.x, cell.y]
-			platform.configure_from_tiles(layer, cells, ground.tile_set)
+			platform.configure_from_tiles(layer, cells)
 			for platform_cell in cells:
 				layer.erase_cell(platform_cell)
 			layer.add_child(platform)
+
+
+func _setup_enemy_supports() -> void:
+	if not enemy_supports_enabled:
+		return
+	# Pilares e pontes decorativas precisam de apoio para os inimigos da fase 2.
+	# A camada propria conserva as regras existentes de contato do Mario.
+	for child in $Mundo.get_children():
+		var layer := child as TileMapLayer
+		if layer == null or layer.tile_set == null or layer.name not in [&"Ground", &"perigos"]:
+			continue
+		var supports := StaticBody2D.new()
+		supports.name = "EnemySupports"
+		supports.collision_layer = ENEMY_SUPPORT_LAYER
+		supports.collision_mask = 0
+		for cell in layer.get_used_cells():
+			var atlas := layer.get_cell_atlas_coords(cell)
+			var support_rect := Rect2()
+			if atlas.x >= 3 and atlas.x <= 5 and atlas.y == 18:
+				support_rect = Rect2(0, 16, 32, 16)
+			elif atlas.x >= 3 and atlas.x <= 5 and atlas.y == 20:
+				support_rect = Rect2(0, 0, 32, 32)
+			elif layer.name == &"Ground" and atlas.y == 26 and atlas.x >= 9 and atlas.x <= 11:
+				# A faixa horizontal visivel da ponte fica 22 pixels abaixo do tile.
+				match atlas.x:
+					9: support_rect = Rect2(14, 22, 18, 4)
+					10: support_rect = Rect2(0, 22, 32, 4)
+					11: support_rect = Rect2(0, 22, 20, 4)
+			if not support_rect.has_area():
+				continue
+			var shape := CollisionShape2D.new()
+			var rectangle := RectangleShape2D.new()
+			rectangle.size = support_rect.size
+			shape.shape = rectangle
+			shape.one_way_collision = atlas.x >= 3 and atlas.x <= 5 and atlas.y == 18
+			shape.one_way_collision_margin = 1.0
+			shape.position = layer.map_to_local(cell) - Vector2(layer.tile_set.tile_size) * 0.5
+			shape.position += support_rect.get_center()
+			supports.add_child(shape)
+		if supports.get_child_count() > 0:
+			layer.add_child(supports)
+		else:
+			supports.free()
 
 
 func get_map_bounds() -> Rect2:
