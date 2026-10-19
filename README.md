@@ -253,7 +253,7 @@ As duas fases usam inimigos em escala 2.25. As amplitudes abaixo sao distancias 
 | Koopa | 48 | 160 |
 | Koopa2 | 160 | 160 |
 
-Na fase 2, `Enemy Supports Enabled` cria apoio para os inimigos nos pilares e nas faixas das pontes que nao tinham colisao. A camada `enemy_support` e reconhecida pelos colisores e pelos sensores dos inimigos.
+Na fase 2, `Enemy Supports Enabled` cria apoio para os inimigos nos pilares e nas faixas das pontes que nao tinham colisao. A camada `enemy_support` e reconhecida pelos colisores e pelos sensores dos inimigos. Os Goombas 4, 5 e 6 iniciam em y = -92, com os pes sobre a faixa das pontes em y = -74, sem comecar dentro do piso. O Goomba5 fica em x = 2256 para acomodar toda a amplitude e a largura do colisor dentro da ponte.
 
 Validacao de todos os percursos, 40 segundos por fase e protecao contra buracos, degraus e plataformas que desabam: `godot --headless --fixed-fps 60 --path . --script res://tests/enemy_patrol.gd`.
 

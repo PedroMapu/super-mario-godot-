@@ -3214,7 +3214,7 @@ scale = Vector2(2.25, 2.25)
 patrol_amplitude = 160.0
 
 [node name="Goomba6" parent="Inimigos" unique_id=1322074127 instance=ExtResource("6_icdrr")]
-position = Vector2(2160, -84)
+position = Vector2(2160, -92)
 scale = Vector2(2.25, 2.25)
 patrol_amplitude = 14.0
 
@@ -3234,12 +3234,12 @@ scale = Vector2(2.25, 2.25)
 patrol_amplitude = 160.0
 
 [node name="Goomba4" parent="Inimigos" unique_id=1552741684 instance=ExtResource("6_icdrr")]
-position = Vector2(2064, -82)
+position = Vector2(2064, -92)
 scale = Vector2(2.25, 2.25)
 patrol_amplitude = 14.0
 
 [node name="Goomba5" parent="Inimigos" unique_id=1583236530 instance=ExtResource("6_icdrr")]
-position = Vector2(2246, -82)
+position = Vector2(2256, -92)
 scale = Vector2(2.25, 2.25)
 patrol_amplitude = 14.0
 
