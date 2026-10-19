@@ -4,9 +4,11 @@ Sprites da imagem `../UndergroundLava.png` fornecida pelo usuário. O PNG foi co
 
 | Recorte | Região no PNG (x, y, largura, altura) | Uso |
 | --- | --- | --- |
-| `lava_surface.tres` | `(144, 32, 64, 16)` | Lava com bolhas; mais legível que a faixa lisa `(144, 0, 64, 16)` |
-| `water_surface.tres` | `(144, 80, 64, 16)` | Superfície azul com espuma |
-| `water_fill.tres` | `(144, 96, 16, 16)` | Preenchimento da água, sem a região transparente ao lado |
+| Superfície da lava | `(144, 32, 64, 16)` | Lava com bolhas; mais legível que a faixa lisa `(144, 0, 64, 16)` |
+| Superfície da água | `(144, 80, 64, 16)` | Superfície azul com espuma |
+| Preenchimento da água | `(144, 96, 16, 16)` | Preenchimento da água, sem a região transparente ao lado |
+
+Os três TileSets abaixo definem esses recortes diretamente no atlas. A animação cria seus `AtlasTexture` em tempo de execução; não são necessárias cópias avulsas desses recortes em arquivos `.tres`.
 
 Os TileSets usam células nativas de 16 px e as camadas ficam em escala 2, com filtro **Nearest**, resultando nos mesmos tiles de 32 px das fases. As quatro partes das superfícies seguem a coordenada horizontal do mapa para formar uma faixa contínua. Apenas células de água sem outra célula acima usam espuma.
 

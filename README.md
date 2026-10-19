@@ -227,7 +227,7 @@ Cada golpe de inimigo que tira vida toca `Mario/dano_mario.wav`, um efeito chipt
 
 ## Goomba e Koopa
 
-As cenas `cenas/goomba.tscn` e `cenas/koompa.tscn` podem ser arrastadas para qualquer fase. A fase 1 ja inclui um de cada. As cenas da raiz tambem usam a mesma logica.
+As cenas `cenas/goomba.tscn` e `cenas/koompa.tscn` podem ser arrastadas para qualquer fase. As fases e os testes usam essas mesmas cenas, sem copias na raiz do projeto.
 
 - Ambos patrulham entre a posicao inicial menos e mais `patrol_amplitude`, passando pelo centro a cada volta. Mantem animacao, gravidade e colisao com o chao; tambem invertem nas paredes.
 - Pisar no Goomba o achata e faz Mario rebater. Depois ele desaparece.

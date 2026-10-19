@@ -68,7 +68,7 @@ func _run() -> void:
 		patrol_enemy.queue_free()
 		await frames(2)
 
-	var stationary := spawn("res://goomba.tscn", Vector2(400, 76))
+	var stationary := spawn("res://cenas/goomba.tscn", Vector2(400, 76))
 	stationary.patrol_amplitude = 0.0
 	await frames(10)
 	check(is_equal_approx(stationary.global_position.x, 400.0) and stationary.is_on_floor(), "Amplitude zero para caminhada e mantem gravidade")
@@ -117,7 +117,7 @@ func _run() -> void:
 	koopa.contact_grace = 0.0
 	koopa.on_player_contact(mario, false)
 	check(koopa.state == koopa.State.SHELL_MOVING and koopa.direction == 1, "Mario chuta casco para longe")
-	goomba = spawn("res://goomba.tscn", Vector2(koopa.position.x + 70, 76))
+	goomba = spawn("res://cenas/goomba.tscn", Vector2(koopa.position.x + 70, 76))
 	goomba.walk_speed = 0.0
 	await frames(18)
 	check(goomba.defeated, "Casco em movimento derrota outro inimigo")
@@ -145,7 +145,7 @@ func _run() -> void:
 	await frames(2)
 
 	mario = spawn("res://cenas/mario.tscn", Vector2(600, 71))
-	koopa = spawn("res://koompa.tscn", Vector2(640, 72))
+	koopa = spawn("res://cenas/koompa.tscn", Vector2(640, 72))
 	koopa.stomp(mario)
 	koopa.stomp(mario)
 	await frames(2)
@@ -211,7 +211,7 @@ func _run() -> void:
 	mario.queue_free()
 	await frames(2)
 
-	for scene_path in ["res://goomba.tscn", "res://koompa.tscn", "res://cenas/goomba.tscn", "res://cenas/koompa.tscn"]:
+	for scene_path in ["res://cenas/goomba.tscn", "res://cenas/koompa.tscn"]:
 		var enemy := spawn(scene_path, Vector2(800, 0))
 		check(enemy.get_node("Colisao").shape != null, "Cena reutilizavel: " + scene_path)
 		enemy.queue_free()
