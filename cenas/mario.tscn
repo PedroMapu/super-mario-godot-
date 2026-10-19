@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://342jp71t5oo1" path="res://cenas/map_camera.gd" id="3_camera"]
 [ext_resource type="Texture2D" uid="uid://7v24l8xsgldq" path="res://Mario/Small.png" id="3_ls8p2"]
 [ext_resource type="AudioStream" uid="uid://dq4n1ius3qowl" path="res://Mario/small_to_big.wav" id="6_growth_sound"]
+[ext_resource type="AudioStream" path="res://Mario/dano_mario.wav" id="7_damage_sound"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_x8hvn"]
 atlas = ExtResource("2_g532q")
@@ -22,6 +23,14 @@ region = Rect2(192, 0, 32, 32)
 [sub_resource type="AtlasTexture" id="AtlasTexture_big_run_contact"]
 atlas = ExtResource("2_g532q")
 region = Rect2(224, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_jump"]
+atlas = ExtResource("2_g532q")
+region = Rect2(288, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_big_fall"]
+atlas = ExtResource("2_g532q")
+region = Rect2(320, 0, 32, 32)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_big_swim_reach"]
 atlas = ExtResource("2_g532q")
@@ -51,9 +60,14 @@ region = Rect2(209, 0, 14, 20)
 margin = Rect2(5, 7, 10, 8)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1qywg"]
-atlas = ExtResource("1_4cqt6")
-region = Rect2(208, 39, 16, 22)
+atlas = ExtResource("3_ls8p2")
+region = Rect2(296, 9, 16, 22)
 margin = Rect2(4, 5, 8, 6)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_small_fall"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(328, 10, 16, 20)
+margin = Rect2(4, 7, 8, 8)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g532q"]
 atlas = ExtResource("3_ls8p2")
@@ -81,14 +95,107 @@ atlas = ExtResource("1_4cqt6")
 region = Rect2(328, 0, 15, 19)
 margin = Rect2(4, 8, 9, 9)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_glide_body1"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(232, 12, 15, 20)
+margin = Rect2(4, 7, 9, 8)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_glide_body2"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(264, 11, 15, 21)
+margin = Rect2(4, 6, 9, 7)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_spin1"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_spin2"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_spin3"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_spin4"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_spin5"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(192, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_spin6"]
+atlas = ExtResource("3_ls8p2")
+region = Rect2(224, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_open"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(240, 608, 11, 10)
+margin = Rect2(0, 1, 1, 4)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_flat"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(280, 607, 9, 5)
+margin = Rect2(2, 1, 3, 9)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_wave"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(280, 568, 9, 5)
+margin = Rect2(2, 2, 3, 9)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_sail1"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(88, 673, 15, 13)
+margin = Rect2(1, 2, 3, 5)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_cape_sail2"]
+atlas = ExtResource("1_4cqt6")
+region = Rect2(129, 675, 17, 10)
+margin = Rect2(0, 3, 1, 8)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_cape"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_cape_open")}],
+"loop": true, "name": &"rest", "speed": 6.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_cape_open")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_flat")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_wave")}],
+"loop": true, "name": &"flutter", "speed": 9.0
+}, {
+"frames": [{"duration": 2.0, "texture": SubResource("AtlasTexture_cape_sail1")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_sail2")}, {"duration": 2.0, "texture": SubResource("AtlasTexture_cape_sail1")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_sail2")}],
+"loop": true, "name": &"glide", "speed": 12.0
+}]
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_vabh6"]
 animations = [{
+"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_cape_glide_body1")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_glide_body2")}],
+"loop": true, "name": &"small_glide", "speed": 6.0
+}, {
+"frames": [{"duration": 1.0, "texture": SubResource("AtlasTexture_cape_spin1")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_spin2")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_spin3")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_spin4")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_spin5")}, {"duration": 1.0, "texture": SubResource("AtlasTexture_cape_spin6")}],
+"loop": false, "name": &"small_to_cape", "speed": 16.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_x8hvn")
 }],
 "loop": 1,
 "name": &"big_idle",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_jump")
+}],
+"loop": false,
+"name": &"big_jump",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_big_fall")
+}],
+"loop": false,
+"name": &"big_fall",
 "speed": 10.0
 }, {
 "frames": [{
@@ -173,8 +280,16 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_1qywg")
 }],
-"loop": 1,
+"loop": false,
 "name": &"small_jump",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_small_fall")
+}],
+"loop": false,
+"name": &"small_fall",
 "speed": 10.0
 }, {
 "frames": [{
@@ -230,6 +345,13 @@ collision_mask = 62
 script = ExtResource("1_jthgk")
 metadata/_edit_group_ = true
 
+[node name="Cape" type="AnimatedSprite2D" parent="."]
+visible = false
+position = Vector2(-18, -5)
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_cape")
+animation = &"rest"
+
 [node name="Animacao" type="AnimatedSprite2D" parent="." unique_id=1402773378]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_vabh6")
@@ -246,6 +368,11 @@ volume_db = -6.0
 
 [node name="JumpSound" type="AudioStreamPlayer" parent="." unique_id=1546929717]
 volume_db = -8.0
+
+[node name="DamageSound" type="AudioStreamPlayer" parent="."]
+process_mode = 3
+stream = ExtResource("7_damage_sound")
+volume_db = -7.0
 
 [node name="AreaDano" type="Area2D" parent="." unique_id=1868949472]
 collision_layer = 0

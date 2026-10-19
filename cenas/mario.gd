@@ -21,7 +21,11 @@ const ANIMATION_MOVEMENT_THRESHOLD := 5.0
 const GROWTH_ANIMATION := &"small_to_big"
 const GROWTH_FPS := 10.0
 const GROWTH_IDLE_DURATION := 0.15
-const BIG_BODY_HEIGHT := 64.0
+const CAPE_ANIMATION := &"small_to_cape"
+# O quadro parado tem 15x28 pixels visiveis, ampliados em 2x.
+# A largura mantem o colisor dentro do corpo nas duas direcoes.
+const BIG_BODY_WIDTH := 28.0
+const BIG_BODY_HEIGHT := 56.0
 const SMALL_JUMP_SOUND := preload("res://Mario/jump_small.wav")
 const BIG_JUMP_SOUND := preload("res://Mario/jump_big.wav")
 
@@ -46,6 +50,12 @@ const DEATH_SCREAM := preload("res://Mario/grito_mario.wav")
 @export_range(1.0, 1000.0, 5.0, "or_greater", "suffix:px") var big_jump_height := 220.0
 @export_group("")
 
+@export_group("Capa / planar")
+## Segure o pulo durante a descida para abrir a capa. Nao permite subir no ar.
+@export_range(20.0, 250.0, 5.0, "suffix:px/s") var glide_fall_speed := 75.0
+@export_range(20.0, 600.0, 10.0) var glide_gravity := 180.0
+@export_group("")
+
 @export var swim_speed := 110.0
 @export var swim_impulse := -145.0
 @export var enemy_bounce_velocity := -220.0
@@ -65,9 +75,14 @@ const DEATH_SCREAM := preload("res://Mario/grito_mario.wav")
 @onready var damage_shape: CollisionShape2D = $AreaDano/ColisaoDano
 @onready var growth_sound: AudioStreamPlayer = $GrowthSound
 @onready var jump_sound: AudioStreamPlayer = $JumpSound
+@onready var damage_sound: AudioStreamPlayer = $DamageSound
+@onready var cape: AnimatedSprite2D = $Cape
 
 var is_big := false
 var is_growing := false
+var has_cape := false
+var is_gliding := false
+var _transformation_animation: StringName = GROWTH_ANIMATION
 var _growth_idle_time := 0.0
 var _growth_velocity := Vector2.ZERO
 var _growth_tree_paused := false
@@ -155,6 +170,8 @@ func _physics_process(delta: float) -> void:
 	_feet_before_move = _feet_position().y
 	_fall_velocity = velocity.y
 	move_and_slide()
+	if is_on_floor() or is_on_ceiling():
+		is_gliding = false
 	_check_block_contacts()
 	if is_growing:
 		return
@@ -181,6 +198,7 @@ func _update_horizontal_velocity(input_direction: float, delta: float) -> void:
 
 
 func _update_vertical_velocity(delta: float) -> void:
+	is_gliding = false
 	if is_swimming:
 		if Input.is_action_pressed("move_down"):
 			velocity.y = move_toward(velocity.y, swim_speed, MOVEMENT_ACCELERATION * delta)
@@ -191,7 +209,11 @@ func _update_vertical_velocity(delta: float) -> void:
 				velocity.y = swim_impulse
 	else:
 		if not is_on_floor():
-			velocity.y += get_gravity().y * delta
+			is_gliding = has_cape and velocity.y > 0.0 and Input.is_action_pressed("jump") and _hurt_time <= 0.0
+			if is_gliding:
+				velocity.y = minf(velocity.y + glide_gravity * delta, glide_fall_speed)
+			else:
+				velocity.y += get_gravity().y * delta
 		if Input.is_action_just_pressed("jump") and is_on_floor():
 			if is_big:
 				velocity.y = -sqrt(2.0 * absf(get_gravity().y) * big_jump_height)
@@ -253,9 +275,24 @@ func _update_animation(input_direction: float) -> void:
 	var animation := _select_animation(input_direction)
 	if sprite.animation != animation or not sprite.is_playing():
 		sprite.play(animation)
+	_update_cape_visual()
+
+
+func _update_cape_visual() -> void:
+	cape.visible = has_cape and not is_dead
+	cape.flip_h = sprite.flip_h
+	cape.position = Vector2(18.0 if sprite.flip_h else -18.0, -5.0)
+	if is_gliding:
+		cape.position = Vector2(20.0 if sprite.flip_h else -20.0, -11.0)
+	var animation := &"glide" if is_gliding else &"flutter"
+	if not is_gliding and absf(velocity.x) < ANIMATION_MOVEMENT_THRESHOLD and is_on_floor():
+		animation = &"rest"
+	cape.play(animation)
 
 
 func _select_animation(input_direction: float) -> StringName:
+	if has_cape and is_gliding:
+		return &"small_glide"
 	if is_big and is_swimming:
 		if Input.is_action_pressed("move_down"):
 			return &"big_swim_down"
@@ -264,13 +301,15 @@ func _select_animation(input_direction: float) -> StringName:
 		if velocity.y < 0.0:
 			return &"big_swim_up"
 		return &"big_swim_down"
+	if is_big and not is_on_floor():
+		return &"big_jump" if velocity.y < 0.0 else &"big_fall"
 	var small_animation := _select_small_animation(input_direction)
 	if not is_big:
 		return small_animation
 	var big_animation := StringName(String(small_animation).replace("small_", "big_"))
 	if sprite.sprite_frames.has_animation(big_animation):
 		return big_animation
-	# Enquanto nao houver outras poses grandes, conserva o Mario grande.
+	# Conserva o Mario grande se uma animacao terrestre estiver ausente.
 	return &"big_idle"
 
 
@@ -289,7 +328,7 @@ func _select_small_animation(input_direction: float) -> StringName:
 
 
 func grow() -> void:
-	if is_dead or is_growing or is_big or _respawn_pending:
+	if is_dead or is_growing or is_big or has_cape or _respawn_pending:
 		return
 	if not sprite.sprite_frames.has_animation(GROWTH_ANIMATION):
 		return
@@ -306,6 +345,31 @@ func grow() -> void:
 			frames.add_frame(GROWTH_ANIMATION, pose)
 		frames.set_animation_speed(GROWTH_ANIMATION, GROWTH_FPS)
 	frames.set_animation_loop(GROWTH_ANIMATION, false)
+	_transformation_animation = GROWTH_ANIMATION
+	_start_transformation(frames, GROWTH_ANIMATION)
+
+
+func equip_cape() -> void:
+	if is_dead or is_growing or has_cape or _respawn_pending:
+		return
+	var frames := _base_sprite_frames.duplicate() as SpriteFrames
+	var current_pose := sprite.sprite_frames.get_frame_texture(sprite.animation, sprite.frame)
+	# Alterna a pose atual com o giro pequeno antes de abrir a capa.
+	var spin_poses: Array[Texture2D] = []
+	for index in frames.get_frame_count(CAPE_ANIMATION):
+		spin_poses.append(frames.get_frame_texture(CAPE_ANIMATION, index))
+	frames.clear(CAPE_ANIMATION)
+	frames.add_frame(CAPE_ANIMATION, current_pose)
+	for repeat in 2:
+		for pose in spin_poses:
+			frames.add_frame(CAPE_ANIMATION, pose)
+	frames.set_animation_loop(CAPE_ANIMATION, false)
+	_transformation_animation = CAPE_ANIMATION
+	_start_transformation(frames, CAPE_ANIMATION)
+
+
+func _start_transformation(frames: SpriteFrames, animation: StringName) -> void:
+	jump_sound.stop()
 	is_growing = true
 	_growth_idle_time = 0.0
 	_growth_velocity = velocity
@@ -316,16 +380,23 @@ func grow() -> void:
 	get_tree().paused = true
 	sprite.modulate.a = 1.0
 	sprite.sprite_frames = frames
-	sprite.play(GROWTH_ANIMATION)
+	sprite.play(animation)
 	growth_sound.play()
 	_align_sprite_to_feet()
 
 
 func _on_growth_animation_finished() -> void:
-	if not is_growing or sprite.animation != GROWTH_ANIMATION:
+	if not is_growing or sprite.animation != _transformation_animation:
 		return
-	is_big = true
-	sprite.play(&"big_idle")
+	if _transformation_animation == CAPE_ANIMATION:
+		is_big = false
+		has_cape = true
+		_restore_small_body()
+		sprite.play(&"small_idle")
+		_update_cape_visual()
+	else:
+		is_big = true
+		sprite.play(&"big_idle")
 	_growth_idle_time = GROWTH_IDLE_DURATION
 
 
@@ -336,7 +407,10 @@ func _finish_growth() -> void:
 	is_growing = false
 	velocity = _growth_velocity
 	_damage_grace = maxf(_damage_grace, RESPAWN_INVULNERABILITY)
-	_try_expand_body()
+	if is_big:
+		_try_expand_body()
+	else:
+		sprite.offset = _small_sprite_offset
 
 
 func _align_sprite_to_feet() -> void:
@@ -349,15 +423,19 @@ func _align_sprite_to_feet() -> void:
 
 func _try_expand_body() -> void:
 	var rectangle := RectangleShape2D.new()
-	rectangle.size = Vector2(_small_body_size.x, BIG_BODY_HEIGHT)
+	rectangle.size = Vector2(BIG_BODY_WIDTH, BIG_BODY_HEIGHT)
 	var feet_y := _small_body_position.y + _small_body_size.y * 0.5
 	var center := Vector2(_small_body_position.x, feet_y - BIG_BODY_HEIGHT * 0.5)
 	var query := PhysicsShapeQueryParameters2D.new()
 	var probe := rectangle.duplicate() as RectangleShape2D
-	# O repouso de move_and_slide pode penetrar alguns centesimos no piso.
-	probe.size -= Vector2(0.2, 0.2)
+	# Tolera o repouso no piso, mas reserva a margem de recuperacao no teto.
+	# Encolher a consulta por cima permitia crescer num vao sem folga,
+	# prendendo o corpo grande entre o teto e o chao no move_and_slide.
+	var head_clearance := maxf(safe_margin * 2.0, 0.2)
+	probe.size = rectangle.size + Vector2(-0.2, head_clearance - 0.1)
 	query.shape = probe
-	query.transform = global_transform * Transform2D(0.0, center)
+	var probe_center := center - Vector2(0, (head_clearance + 0.1) * 0.5)
+	query.transform = global_transform * Transform2D(0.0, probe_center)
 	query.collision_mask = collision_mask
 	query.exclude = [get_rid()]
 	# Ao bater sob a caixa, espera sair do teto para aumentar o corpo sem prender.
@@ -365,9 +443,9 @@ func _try_expand_body() -> void:
 		return
 	(body_shape.shape as RectangleShape2D).size = rectangle.size
 	body_shape.position = center
-	var extra_height := BIG_BODY_HEIGHT - _small_body_size.y
-	(damage_shape.shape as RectangleShape2D).size = _small_damage_size + Vector2(0, extra_height)
-	damage_shape.position = _small_damage_position - Vector2(0, extra_height * 0.5)
+	# A area de dano acompanha o corpo, sem atingir perigos fora do sprite.
+	(damage_shape.shape as RectangleShape2D).size = rectangle.size
+	damage_shape.position = center
 	_big_body_applied = true
 
 
@@ -436,6 +514,7 @@ func take_enemy_damage(source: Node2D) -> void:
 		damage = maxi(1, source.get_contact_damage())
 	lives = maxi(0, lives - damage)
 	_damage_grace = DAMAGE_INVULNERABILITY
+	damage_sound.play()
 	lives_changed.emit(lives)
 	enemy_contact.emit(source)
 	if lives == 0:
@@ -463,6 +542,8 @@ func die() -> void:
 	if lives != 0:
 		set_lives(0)
 	is_dead = true
+	is_gliding = false
+	cape.hide()
 	sprite.modulate.a = 1.0
 	_play_death_scream()
 	_play_death_sound()
@@ -585,6 +666,7 @@ func _finish_death() -> void:
 func _respawn() -> void:
 	growth_sound.stop()
 	jump_sound.stop()
+	damage_sound.stop()
 	if is_dead:
 		_restore_after_death()
 	if is_growing:
@@ -592,14 +674,14 @@ func _respawn() -> void:
 		process_mode = _growth_process_mode
 	is_growing = false
 	is_big = false
+	has_cape = false
+	is_gliding = false
+	cape.hide()
 	_big_body_applied = false
 	_growth_idle_time = 0.0
 	sprite.offset = _small_sprite_offset
 	sprite.sprite_frames = _base_sprite_frames
-	(body_shape.shape as RectangleShape2D).size = _small_body_size
-	body_shape.position = _small_body_position
-	(damage_shape.shape as RectangleShape2D).size = _small_damage_size
-	damage_shape.position = _small_damage_position
+	_restore_small_body()
 	global_position = _spawn_position
 	velocity = Vector2.ZERO
 	is_swimming = false
@@ -614,6 +696,14 @@ func _respawn() -> void:
 		active_camera.reset_smoothing()
 		active_camera.force_update_scroll()
 	respawned.emit()
+
+
+func _restore_small_body() -> void:
+	_big_body_applied = false
+	(body_shape.shape as RectangleShape2D).size = _small_body_size
+	body_shape.position = _small_body_position
+	(damage_shape.shape as RectangleShape2D).size = _small_damage_size
+	damage_shape.position = _small_damage_position
 
 
 func _restore_after_death() -> void:

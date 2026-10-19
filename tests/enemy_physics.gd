@@ -216,6 +216,7 @@ func _run() -> void:
 		check(enemy.get_node("Colisao").shape != null, "Cena reutilizavel: " + scene_path)
 		enemy.queue_free()
 	var level := load("res://cenas/level_01.tscn").instantiate() as Node2D
+	level.intro_enabled = false
 	root.add_child(level)
 	await frames(2)
 	check(level.has_node("Inimigos/Goomba") and level.has_node("Inimigos/Koopa"), "Fase 1 inclui Goomba e Koopa")

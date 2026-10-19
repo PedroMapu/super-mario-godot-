@@ -108,6 +108,7 @@ func _run() -> void:
 			for authored in authored_blocks:
 				authored_positions[authored.name] = (authored as Node2D).position
 		level.position = Vector2(128, 64)
+		level.intro_enabled = false
 		root.add_child(level)
 		level.get_node("Mario").set_physics_process(false)
 		await frames(2)

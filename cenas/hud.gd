@@ -1,7 +1,6 @@
 extends CanvasLayer
 
 const HUD_SIZE := Vector2(320, 40)
-const COIN_SCRIPT := preload("res://cenas/coin.gd")
 
 @onready var strip: Control = $Strip
 @onready var lives_label: Label = $Strip/Lives/Count
@@ -31,36 +30,17 @@ func _fit_viewport() -> void:
 func bind_level(level: Node2D) -> void:
 	_level = level
 	level.boxes_changed.connect(update_boxes)
+	level.coins_changed.connect(update_coins)
 	level.mario.lives_changed.connect(update_lives)
 	update_boxes(level.activated_boxes, level.total_boxes)
 	update_lives(level.mario.lives)
 	# Scene filenames work with F6 and with instances renamed inside main.
 	stage_label.text = level.scene_file_path.get_file().get_basename().trim_prefix("level_")
-	collected_coins = 0
-	for coin in get_tree().get_nodes_in_group("coins"):
-		_watch_coin(coin)
-	get_tree().node_added.connect(_watch_coin)
-	_update_coins()
+	update_coins(level.collected_coins, level.total_coins)
 
 
-func _watch_coin(node: Node) -> void:
-	if node.get_script() != COIN_SCRIPT or not is_instance_valid(_level) or not _level.is_ancestor_of(node):
-		return
-	if not node.collected.is_connected(_on_coin_collected):
-		node.collected.connect(_on_coin_collected)
-		if node.is_collected:
-			collected_coins += 1
-			_update_coins()
-
-
-func _on_coin_collected(player: CharacterBody2D) -> void:
-	if player != _level.mario:
-		return
-	collected_coins += 1
-	_update_coins()
-
-
-func _update_coins() -> void:
+func update_coins(collected: int, _total: int) -> void:
+	collected_coins = collected
 	coins_label.text = "×%02d" % collected_coins
 
 

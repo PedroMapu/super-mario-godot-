@@ -69,6 +69,7 @@ func _check_motion_and_rider(axis: Vector2) -> void:
 
 func _check_level() -> void:
 	var level := load("res://cenas/level_02.tscn").instantiate() as Node2D
+	level.intro_enabled = false
 	root.add_child(level)
 	current_scene = level
 	var mario := level.get_node("Mario") as CharacterBody2D

@@ -31,6 +31,7 @@ func feet(enemy: CharacterBody2D) -> Vector2:
 func _check_levels() -> void:
 	for number in ["01", "02"]:
 		var level := load("res://cenas/level_" + number + ".tscn").instantiate() as Node2D
+		level.intro_enabled = false
 		root.add_child(level)
 		var mario := level.get_node("Mario") as CharacterBody2D
 		mario.set_physics_process(false)

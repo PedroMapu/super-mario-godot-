@@ -50,6 +50,7 @@ func check_passage(mario: CharacterBody2D, top: Vector2, description: String) ->
 func _run() -> void:
 	for number in ["01", "02"]:
 		var level := load("res://cenas/level_" + number + ".tscn").instantiate() as Node2D
+		level.intro_enabled = false
 		root.add_child(level)
 		var mario := level.get_node("Mario") as CharacterBody2D
 		var normal_mask := mario.collision_mask

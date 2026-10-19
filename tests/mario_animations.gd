@@ -35,6 +35,18 @@ func _run() -> void:
 	mario.position = Vector2(0, 20)
 	root.add_child(mario)
 	var sprite := mario.get_node("Animacao") as AnimatedSprite2D
+	var idle_texture := sprite.sprite_frames.get_frame_texture(&"small_idle", 0)
+	var jump_texture := sprite.sprite_frames.get_frame_texture(&"small_jump", 0)
+	var fall_texture := sprite.sprite_frames.get_frame_texture(&"small_fall", 0)
+	check(jump_texture.get_size() == idle_texture.get_size() and fall_texture.get_size() == idle_texture.get_size(),
+		"Recortes do salto e da queda conservam o tamanho visual do repouso")
+	var idle_base: float = idle_texture.margin.position.y + idle_texture.get_image().get_used_rect().end.y
+	var jump_base: float = jump_texture.margin.position.y + jump_texture.get_image().get_used_rect().end.y
+	var fall_base: float = fall_texture.margin.position.y + fall_texture.get_image().get_used_rect().end.y
+	check(jump_base == idle_base and fall_base == idle_base,
+		"Troca entre subida, queda e repouso conserva a base visual dos pes")
+	check(jump_texture.get_image().get_data() != fall_texture.get_image().get_data(),
+		"Subida e descida mostram poses diferentes")
 	# Verifica a selecao durante o movimento, preservando os frames montados no editor.
 	await frames(30)
 	check(mario.is_on_floor() and sprite.animation == &"small_idle", "Ao pousar parado, Mario usa idle")
@@ -63,10 +75,16 @@ func _run() -> void:
 		await frames(1)
 		if mario.velocity.y > 0.0:
 			break
-	var fall_animation := &"small_fall" if sprite.sprite_frames.has_animation(&"small_fall") else &"small_jump"
-	check(mario.velocity.y > 0.0 and sprite.animation == fall_animation, "Descida real usa fall ou pose de salto quando fall nao existe")
+	check(mario.velocity.y > 0.0 and sprite.animation == &"small_fall", "Descida real troca a pose de salto pela pose de queda")
 	await frames(30)
 	check(mario.is_on_floor() and sprite.animation == &"small_idle" and sprite.flip_h, "Pouso restaura idle com direcao preservada")
+	if "--land-only" in OS.get_cmdline_user_args():
+		mario.queue_free()
+		floor_body.queue_free()
+		await frames(2)
+		print("MARIO ANIMATIONS FAILURES: ", failures)
+		quit(1 if failures > 0 else 0)
+		return
 
 	var water := TileMapLayer.new()
 	var tile_set := TileSet.new()

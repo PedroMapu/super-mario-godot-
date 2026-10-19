@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://cenas/level_intro.gd" id="1_intro"]
+[ext_resource type="Shader" path="res://cenas/level_intro.gdshader" id="2_iris"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_iris"]
+resource_local_to_scene = true
+shader = ExtResource("2_iris")
+
+[node name="LevelIntro" type="CanvasLayer"]
+process_mode = 3
+layer = 100
+script = ExtResource("1_intro")
+
+[node name="Iris" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_iris")
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Runner" type="AnimatedSprite2D" parent="."]
+visible = false
+texture_filter = 1

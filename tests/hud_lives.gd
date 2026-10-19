@@ -41,8 +41,10 @@ func _run() -> void:
 	extra.position = Vector2(3500, -150)
 	level.add_child(extra)
 	var other_level := load("res://cenas/level_02.tscn").instantiate() as Node2D
+	other_level.intro_enabled = false
 	root.add_child(other_level)
 	other_level.mario.set_physics_process(false)
+	level.intro_enabled = false
 	root.add_child(level)
 	level.mario.set_physics_process(false)
 	await frames(2)
@@ -76,6 +78,7 @@ func _run() -> void:
 	await frames(2)
 
 	var main := load("res://cenas/main.tscn").instantiate() as Node2D
+	main.get_node("level01").intro_enabled = false
 	root.add_child(main)
 	main.mario.set_physics_process(false)
 	await frames(2)
@@ -102,6 +105,8 @@ func _run() -> void:
 		await frames(1)
 		if not is_instance_valid(mario):
 			break
+		if main.fase_atual.is_game_over:
+			main.fase_atual.game_over_screen.restart_button.pressed.emit()
 	check(not is_instance_valid(mario) and main.mario.lives == 3 and shown_lives(main.fase_atual.hud) == 3 and not paused, "Morte reinicia a fase com tres vidas e HUD conectado ao novo Mario")
 	check(main.fase_atual.hud.boxes_label.text == "0/3", "Reinicio restaura contador e todas as caixas da fase")
 	mario = main.mario
@@ -110,6 +115,7 @@ func _run() -> void:
 	mario.take_enemy_damage(goomba)
 	check(mario.lives == 1 and not mario.is_dead and shown_lives(main.fase_atual.hud) == 1, "Goomba deixa Mario com uma vida quando inicia com tres")
 	await screenshot("hud_world_one_life.png")
+	await preload("res://tests/level_objectives_helper.gd").complete(main.fase_atual)
 	main._ir_para_fase_2()
 	main.mario.set_physics_process(false)
 	await frames(2)

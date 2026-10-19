@@ -114,6 +114,7 @@ func _run() -> void:
 
 	# Reinicia a fase atual inteira, sem voltar da fase 2 para a fase 1.
 	var main := load("res://cenas/main.tscn").instantiate() as Node2D
+	main.get_node("level01").intro_enabled = false
 	root.add_child(main)
 	await frames(3)
 	for phase in [1, 2]:
@@ -134,6 +135,8 @@ func _run() -> void:
 			await frames(1)
 			if not is_instance_valid(old_mario):
 				break
+			if level.is_game_over:
+				level.game_over_screen.restart_button.pressed.emit()
 		var replacement: Node2D = main.fase_atual
 		check(not is_instance_valid(level) and not is_instance_valid(old_mario) and replacement.scene_file_path.ends_with("level_0%d.tscn" % phase), "Reinicio substitui somente a fase atual: " + str(phase))
 		var new_mario: CharacterBody2D = main.mario
@@ -142,6 +145,7 @@ func _run() -> void:
 		check(main.find_children("Mario", "CharacterBody2D", true, false).size() == 1 and new_mario.get_node("Camera2D").is_current(), "Reinicio conserva unico Mario e camera ativa na fase " + str(phase))
 		if phase == 1:
 			check(not replacement.get_node("Mundo/Ground/QuestionBlock_45_-9").used and replacement.has_node("Inimigos/Goomba"), "Reinicio restaura bloco usado e inimigo removido")
+			await preload("res://tests/level_objectives_helper.gd").complete(replacement)
 			main.get_node("level01/EntradaFase2").body_entered.emit(new_mario)
 			await frames(3)
 			check(main.fase_atual.scene_file_path.ends_with("level_02.tscn"), "Portal continua funcionando depois da morte na fase 1")
@@ -150,6 +154,7 @@ func _run() -> void:
 
 	# F6: a propria fase e a cena atual, sem Main para atualizar referencias.
 	var standalone := load("res://cenas/level_02.tscn").instantiate() as Node2D
+	standalone.intro_enabled = false
 	root.add_child(standalone)
 	current_scene = standalone
 	var falling_mario := standalone.get_node("Mario") as CharacterBody2D
@@ -162,6 +167,8 @@ func _run() -> void:
 		await frames(1)
 		if not is_instance_valid(standalone):
 			break
+		if standalone.is_game_over:
+			standalone.game_over_screen.restart_button.pressed.emit()
 	check(not is_instance_valid(standalone) and current_scene != null and current_scene.scene_file_path.ends_with("level_02.tscn") and not paused, "Fase executada com F6 reinicia e atualiza current_scene")
 	if current_scene != null:
 		current_scene.queue_free()

@@ -44,6 +44,7 @@ func _run() -> void:
 	for number in ["01", "02"]:
 		var level := load("res://cenas/level_" + number + ".tscn").instantiate() as Node2D
 		level.position = Vector2(128, 64)
+		level.intro_enabled = false
 		root.add_child(level)
 		var mario := level.get_node("Mario") as CharacterBody2D
 		mario.set_physics_process(false)

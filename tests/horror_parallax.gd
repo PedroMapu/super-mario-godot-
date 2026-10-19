@@ -36,6 +36,7 @@ func _run() -> void:
 	for number in ["01", "02"]:
 		root.size = Vector2i(1152, 648)
 		var level := load("res://cenas/level_" + number + ".tscn").instantiate() as Node2D
+		level.intro_enabled = false
 		root.add_child(level)
 		current_scene = level
 		var mario := level.get_node("Mario") as CharacterBody2D

@@ -33,6 +33,7 @@ func _run() -> void:
 		var level := load(scene_path).instantiate() as Node2D
 		# Confere tambem limites em coordenadas globais ao mover a fase.
 		level.position = Vector2(128, 64)
+		level.intro_enabled = false
 		root.add_child(level)
 		var mario := level.get_node("Mario") as CharacterBody2D
 		mario.set_physics_process(false)
@@ -67,11 +68,13 @@ func _run() -> void:
 
 	root.size = Vector2i(1152, 648)
 	var main := load("res://cenas/main.tscn").instantiate() as Node2D
+	main.get_node("level01").intro_enabled = false
 	root.add_child(main)
 	await frames(2)
 	check(main.find_children("Mario", "CharacterBody2D", true, false).size() == 1, "Main inicia com um unico Mario dentro da fase 1")
 	var old_mario: CharacterBody2D = main.mario
 	var portal := main.get_node("level01/EntradaFase2") as Area2D
+	await preload("res://tests/level_objectives_helper.gd").complete(main.fase_atual)
 	# Usa o sinal real da entrada, acionando a troca adiada entre fases.
 	portal.body_entered.emit(old_mario)
 	await frames(3)

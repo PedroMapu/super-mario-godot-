@@ -48,6 +48,7 @@ func _run() -> void:
 	root.size = Vector2i(1152, 648)
 	for scene_path in ["res://cenas/level_01.tscn", "res://cenas/level_02.tscn"]:
 		var level := load(scene_path).instantiate() as Node2D
+		level.intro_enabled = false
 		root.add_child(level)
 		current_scene = level
 		var mario := level.get_node("Mario") as CharacterBody2D
@@ -149,6 +150,8 @@ func _run() -> void:
 			await frames(1)
 			if restart_result["level"] != null:
 				break
+			if level.is_game_over:
+				level.game_over_screen.restart_button.pressed.emit()
 		var replacement := restart_result["level"] as Node2D
 		check(replacement != null, "Morte real reinicia a fase")
 		if replacement != null:

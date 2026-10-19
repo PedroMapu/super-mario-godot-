@@ -41,12 +41,23 @@ func measure_jump_height(mario: CharacterBody2D) -> float:
 	await frames(1)
 	check(not jump_audio.playing, "Apertar pulo no ar nao toca som sem um novo salto")
 	Input.action_release("jump")
+	var valid_air_animation := true
+	var saw_ascent := false
+	var saw_descent := false
 	for index in 120:
 		highest_feet = minf(highest_feet, mario._feet_position().y)
 		if mario.is_on_floor() and index > 0:
 			break
+		if mario.is_big and not mario.is_on_floor():
+			var expected_animation := &"big_jump" if mario.velocity.y < 0.0 else &"big_fall"
+			valid_air_animation = valid_air_animation and mario.sprite.animation == expected_animation
+			saw_ascent = saw_ascent or mario.velocity.y < 0.0
+			saw_descent = saw_descent or mario.velocity.y >= 0.0
 		await frames(1)
 	check(mario.is_on_floor(), "Mario retorna ao piso depois do salto")
+	if mario.is_big:
+		check(valid_air_animation and saw_ascent and saw_descent, "Salto grande usa big_jump na subida e big_fall na descida inteira")
+		check(mario.sprite.animation == &"big_idle", "Pousar parado restaura big_idle")
 	return start_feet - highest_feet
 
 
@@ -121,7 +132,7 @@ func _run() -> void:
 	check(sprite.animation == &"big_walk" and sprite.flip_h, "Movimento apos crescimento usa big_walk")
 	mario.velocity = Vector2.ZERO
 	mario._update_animation(0.0)
-	check(sprite.animation == &"big_idle", "Pose ausente de salto grande conserva big_idle")
+	check(sprite.animation == &"big_idle", "Mario grande parado no chao conserva big_idle")
 	mario.set_physics_process(true)
 	await frames(2)
 	var big_jump_height := await measure_jump_height(mario)
@@ -157,8 +168,25 @@ func _run() -> void:
 
 	# A cabecada usa a colisao real do bloco em (53, -9) da fase 1.
 	var level := load("res://cenas/level_01.tscn").instantiate() as Node2D
+	level.intro_enabled = false
 	root.add_child(level)
 	var player := level.get_node("Mario") as CharacterBody2D
+	player.set_physics_process(false)
+	# Compara saltos reais das duas fases no mesmo piso, longe do cenario.
+	var jump_floor := StaticBody2D.new()
+	jump_floor.collision_layer = 2
+	jump_floor.position = Vector2(-10000, 216)
+	var jump_shape := CollisionShape2D.new()
+	var jump_rectangle := RectangleShape2D.new()
+	jump_rectangle.size = Vector2(500, 32)
+	jump_shape.shape = jump_rectangle
+	jump_floor.add_child(jump_shape)
+	root.add_child(jump_floor)
+	player.global_position = Vector2(-10000, 174)
+	player.set_physics_process(true)
+	await frames(2)
+	var phase_one_jump_height := await measure_jump_height(player)
+	var phase_one_jump_velocity: float = player.jump_velocity
 	player.set_physics_process(false)
 	var ground := level.get_node("Mundo/Ground") as TileMapLayer
 	var block := ground.get_node("QuestionBlock_53_-9") as StaticBody2D
@@ -178,6 +206,7 @@ func _run() -> void:
 			break
 		await frames(1)
 	check(block.used and player.is_growing, "Cabecada real na caixa (53, -9) inicia crescimento")
+	var phase_one_growth_frames: int = player.sprite.sprite_frames.get_frame_count(&"small_to_big")
 	check(level.activated_boxes == 2, "Caixa especial continua contando no HUD uma unica vez")
 	for index in 100:
 		if not player.is_growing:
@@ -191,9 +220,40 @@ func _run() -> void:
 	level.queue_free()
 	await frames(2)
 	var second_level := load("res://cenas/level_02.tscn").instantiate() as Node2D
+	second_level.intro_enabled = false
 	root.add_child(second_level)
 	second_level.mario.set_physics_process(false)
-	check(second_level.growth_block_cells.is_empty(), "Recompensa configurada apenas no nivel 1")
+	var second_player: CharacterBody2D = second_level.mario
+	check(second_player.jump_velocity == phase_one_jump_velocity and not second_player.is_big, "Fase 2 inicia pequena com o mesmo impulso de salto da fase 1")
+	second_player.global_position = Vector2(-10000, 174)
+	second_player.set_physics_process(true)
+	await frames(2)
+	var phase_two_jump_height := await measure_jump_height(second_player)
+	check(absf(phase_two_jump_height - phase_one_jump_height) < 0.1, "Salto pequeno das duas fases alcanca a mesma altura real")
+	second_player.set_physics_process(false)
+	jump_floor.queue_free()
+	var second_block := second_level.get_node("CaixasInterrogacao/QuestionBlock_17_-5") as StaticBody2D
+	var second_ground := second_level.get_node("Mundo/Ground") as TileMapLayer
+	check(second_ground.local_to_map(second_ground.to_local(second_block.global_position)) == Vector2i(17, -11), "Caixa de crescimento da fase 2 ocupa o tile (17, -11)")
+	second_player.global_position = second_block.global_position + Vector2(0, 50)
+	second_player.velocity = Vector2(0, -200)
+	second_player.set_physics_process(true)
+	for index in 30:
+		if second_block.used:
+			break
+		await frames(1)
+	check(second_block.used and second_player.is_growing and paused, "Cabecada real na caixa (17, -11) inicia crescimento e pausa o mundo")
+	check(second_player.sprite.animation == &"small_to_big" and second_player.sprite.sprite_frames.get_frame_count(&"small_to_big") == phase_one_growth_frames, "Fase 2 usa a mesma sequencia small_to_big da fase 1")
+	var second_feet: Vector2 = second_player._feet_position()
+	for index in 120:
+		if not second_player.is_growing:
+			break
+		await frames(1)
+	second_player.set_physics_process(false)
+	check(second_player.is_big and not second_player.is_growing and not paused, "Caixa da fase 2 termina em Mario grande e devolve controle")
+	check(second_player._feet_position().is_equal_approx(second_feet), "Crescimento da fase 2 conserva a base dos pes")
+	second_block.activate_from_below()
+	check(second_level.activated_boxes == 1 and not second_player.is_growing, "Caixa usada da fase 2 conta uma vez e nao repete transformacao")
 	# Agua isolada do mapa: verifica as animacoes depois de um crescimento real.
 	var water := TileMapLayer.new()
 	water.position = Vector2(-10000, -1000)
@@ -213,12 +273,7 @@ func _run() -> void:
 	var swimmer: CharacterBody2D = second_level.mario
 	swimmer.global_position = water.global_position
 	swimmer.velocity = Vector2.ZERO
-	swimmer.grow()
 	swimmer.set_physics_process(true)
-	for index in 100:
-		await frames(1)
-		if not swimmer.is_growing:
-			break
 	await frames(2)
 	var swim_sprite: AnimatedSprite2D = swimmer.sprite
 	check(swimmer.is_big and swimmer.is_swimming and swim_sprite.animation == &"big_swim_down", "Mario grande afunda na agua com animacao de nado")
@@ -249,7 +304,7 @@ func _run() -> void:
 	swimmer.global_position = Vector2(-9000, -1000)
 	swimmer.velocity = Vector2.ZERO
 	await frames(2)
-	check(not swimmer.is_swimming and swim_sprite.animation == &"big_idle", "Sair da agua encerra o nado e conserva Mario grande")
+	check(not swimmer.is_swimming and swim_sprite.animation == &"big_fall", "Sair da agua no ar usa a pose de queda do Mario grande")
 	water.queue_free()
 	second_level.queue_free()
 	await frames(2)
