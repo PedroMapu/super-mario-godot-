@@ -72,6 +72,30 @@ func run() -> void:
 		check(false, "Sair encerra o processo")
 		quit(1)
 		return
+	# F6 na propria tela final precisa preservar o layout herdado e funcionar sozinho.
+	var standalone := load("res://cenas/game_complete.tscn").instantiate() as CanvasLayer
+	root.add_child(standalone)
+	current_scene = standalone
+	await frames(2)
+	var base_menu := load("res://cenas/game_over.tscn").instantiate() as CanvasLayer
+	root.add_child(base_menu)
+	await frames(2)
+	for node_name in ["Frame", "TopAccent", "Eyebrow", "Stats", "Encouragement", "Restart", "Exit", "Hint"]:
+		var actual := standalone.get_node("Card/" + node_name) as Control
+		var expected := base_menu.get_node("Card/" + node_name) as Control
+		check(actual.position == expected.position and actual.size == expected.size,
+			"Vitoria preserva posicao e tamanho de " + node_name)
+	check(standalone.get_node("Card/Title").position == Vector2(72, 52), "Titulo de vitoria fica abaixo do subtitulo")
+	base_menu.free()
+	standalone.restart_button.grab_focus()
+	var pose := standalone.portrait.texture as AtlasTexture
+	check(pose.region == Rect2(168, 44, 16, 20), "F6 mostra a pose de vitoria sem depender da fase")
+	check(standalone.stats.text.contains("FASE 02 CONCLUIDA") and not standalone.stats.text.contains("FASE 01"), "F6 nao mostra os dados de Game Over")
+	await tap_ui(&"ui_accept")
+	await frames(4)
+	check(current_scene.scene_file_path == "res://cenas/main.tscn", "Jogar novamente no F6 da tela final inicia a aventura")
+	current_scene.queue_free()
+	await frames(2)
 	var level := make_level()
 	var mario: CharacterBody2D = level.mario
 	var portal := level.get_node("PortalFinal") as Area2D

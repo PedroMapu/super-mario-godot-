@@ -6,6 +6,9 @@ var _celebration_time := 0.0
 
 func _ready() -> void:
 	super._ready()
+	# F6 nesta propria cena tambem permite iniciar uma nova aventura.
+	if get_parent() == get_tree().root:
+		restart_requested.connect(_restart_adventure)
 	# Cada menu controla seu loop sem modificar o recurso importado compartilhado.
 	var music := victory_music.stream.duplicate() as AudioStreamWAV
 	music.loop_mode = AudioStreamWAV.LOOP_FORWARD
@@ -31,10 +34,10 @@ func _ready() -> void:
 func bind_level(level: Node2D) -> void:
 	stats.text = "FASE 02 CONCLUIDA\nMOEDAS %02d/%02d\nCAIXAS %02d/%02d" % [
 		level.collected_coins, level.total_coins, level.activated_boxes, level.total_boxes]
-	var victory_pose := AtlasTexture.new()
-	victory_pose.atlas = preload("res://Mario/Small.png")
-	victory_pose.region = Rect2(168, 44, 16, 20)
-	portrait.texture = victory_pose
+
+
+func _restart_adventure() -> void:
+	get_tree().call_deferred("change_scene_to_file", "res://cenas/main.tscn")
 
 
 func _process(delta: float) -> void:

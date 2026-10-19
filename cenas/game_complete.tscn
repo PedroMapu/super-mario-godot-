@@ -3,6 +3,11 @@
 [ext_resource type="PackedScene" path="res://cenas/game_over.tscn" id="1_menu"]
 [ext_resource type="Script" uid="uid://c1h8ejtmvauet" path="res://cenas/game_complete.gd" id="2_script"]
 [ext_resource type="AudioStream" uid="uid://bng0mif6rfdis" path="res://Mario/vitoria_mario.wav" id="3_victory_music"]
+[ext_resource type="Texture2D" path="res://Mario/Small.png" id="4_mario"]
+
+[sub_resource type="AtlasTexture" id="Atlas_victory"]
+atlas = ExtResource("4_mario")
+region = Rect2(168, 44, 16, 20)
 
 [node name="GameComplete" unique_id=1629691653 instance=ExtResource("1_menu")]
 script = ExtResource("2_script")
@@ -10,46 +15,31 @@ script = ExtResource("2_script")
 [node name="Background" parent="." index="0"]
 color = Color(0.015, 0.035, 0.07, 1)
 
-[node name="Card" parent="." index="1"]
-layout_mode = 3
-anchors_preset = 0
-
-[node name="Frame" parent="Card" index="0"]
-layout_mode = 0
-
 [node name="TopAccent" parent="Card" index="1"]
-layout_mode = 0
 color = Color(1, 0.82, 0.36, 1)
 
 [node name="Eyebrow" parent="Card" index="2"]
-layout_mode = 0
 theme_override_colors/font_color = Color(0.4, 0.86, 0.8, 1)
 text = "AVENTURA CONCLUIDA"
 
 [node name="Title" parent="Card" index="3"]
-layout_mode = 0
 offset_left = 72.0
 scale = Vector2(3, 3)
 theme_override_colors/font_color = Color(1, 0.82, 0.36, 1)
 text = "VOCE VENCEU"
 
+[node name="Portrait" parent="Card" index="4"]
+texture = SubResource("Atlas_victory")
+
 [node name="Stats" parent="Card" index="5"]
-layout_mode = 0
+text = "FASE 02 CONCLUIDA\nMOEDAS --/--\nCAIXAS --/--"
 
 [node name="Encouragement" parent="Card" index="6"]
-layout_mode = 0
 theme_override_colors/font_color = Color(0.55, 0.84, 0.8, 1)
 text = "TODOS OS OBJETIVOS CONCLUIDOS"
 
 [node name="Restart" parent="Card" index="7"]
-layout_mode = 0
 text = "JOGAR NOVAMENTE"
-
-[node name="Exit" parent="Card" index="8"]
-layout_mode = 0
-
-[node name="Hint" parent="Card" index="10"]
-layout_mode = 0
 
 [node name="Stars" type="Node2D" parent="Card" index="11" unique_id=697639014]
 
